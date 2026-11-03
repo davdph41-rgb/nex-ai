@@ -1,3 +1,4 @@
+
 import {
     toolDeclarations,
     executeTool
@@ -12,7 +13,6 @@ export default async function handler(req, res) {
     }
 
     try {
-
         const { message, history = [] } = req.body || {};
         const key = process.env.GEMINI_API_KEY;
 
@@ -28,8 +28,7 @@ export default async function handler(req, res) {
             });
         }
 
-        const model =
-            "gemini-3.5-flash-lite";
+        const model = "gemini-3.5-flash-lite";
 
         const apiURL =
             `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`;
@@ -40,8 +39,9 @@ export default async function handler(req, res) {
                     "Kamu adalah NEX AI, asisten AI pribadi. " +
                     "Jawab menggunakan bahasa Indonesia yang ramah dan jelas. " +
                     "Gunakan riwayat percakapan. " +
-                    "Gunakan tool get_weather jika pengguna meminta informasi cuaca terkini. " +
-                    "Jangan mengarang data dari tool."
+                    "Gunakan get_weather untuk informasi cuaca terkini. " +
+                    "Gunakan search_github untuk mencari repositori GitHub. " +
+                    "Jangan mengarang hasil dari tool."
             }]
         };
 
@@ -49,16 +49,7 @@ export default async function handler(req, res) {
             functionDeclarations: toolDeclarations
         }];
 
-        const contents = [
-            ...history,
-            {
-                role: "user",
-                parts: [{ text: message }]
-            }
-        ];
-
-        async function askGemini(chatContents) {
-
+        async function askGemini(contents) {
             const response = await fetch(apiURL, {
                 method: "POST",
                 headers: {
@@ -67,7 +58,7 @@ export default async function handler(req, res) {
                 },
                 body: JSON.stringify({
                     systemInstruction,
-                    contents: chatContents,
+                    contents,
                     tools
                 })
             });
@@ -75,8 +66,6 @@ export default async function handler(req, res) {
             const data = await response.json();
 
             if (!response.ok) {
-                console.error("Gemini error:", data);
-
                 throw new Error(
                     data.error?.message || "Gemini API error"
                 );
@@ -85,105 +74,101 @@ export default async function handler(req, res) {
             return data;
         }
 
-        // TAHAP 1: Gemini menentukan apakah tool diperlukan
-
-        const firstData = await askGemini(contents);
-
-        const candidate =
-            firstData.candidates?.[0];
-
-        const modelContent =
-            candidate?.content;
-
-        if (!modelContent) {
-            throw new Error("Respons Gemini kosong");
-        }
-
-        const parts = modelContent.parts || [];
-
-        const functionCalls = parts
-            .filter(part => part.functionCall)
-            .map(part => part.functionCall);
-
-        // Jika tidak ada tool yang dipanggil
-
-        if (functionCalls.length === 0) {
-
-            const reply = parts
-                .filter(part => part.text)
-                .map(part => part.text)
-                .join("\n");
-
-            return res.status(200).json({
-                reply
-            });
-        }
-
-        // TAHAP 2: Backend menjalankan tool
-
-        const functionResponses = [];
-
-        for (const call of functionCalls) {
-
-            try {
-
-                const result = await executeTool(
-                    call.name,
-                    call.args || {}
-                );
-
-                functionResponses.push({
-                    functionResponse: {
-                        name: call.name,
-                        response: {
-                            result
-                        },
-                        ...(call.id ? { id: call.id } : {})
-                    }
-                });
-
-            } catch (error) {
-
-                functionResponses.push({
-                    functionResponse: {
-                        name: call.name,
-                        response: {
-                            error: error.message
-                        },
-                        ...(call.id ? { id: call.id } : {})
-                    }
-                });
-            }
-        }
-
-        // TAHAP 3: Kirim hasil tool kembali ke Gemini
-
-        const secondContents = [
-            ...contents,
-            modelContent,
+        // Percakapan awal
+        let contents = [
+            ...history,
             {
                 role: "user",
-                parts: functionResponses
+                parts: [{ text: message }]
             }
         ];
 
-        const finalData =
-            await askGemini(secondContents);
+        // Maksimal 5 putaran pemanggilan tool
+        for (let step = 0; step < 5; step++) {
 
-        const finalParts =
-            finalData.candidates?.[0]?.content?.parts || [];
+            const data = await askGemini(contents);
 
-        const reply = finalParts
-            .filter(part => part.text)
-            .map(part => part.text)
-            .join("\n");
+            const candidate = data.candidates?.[0];
+            const modelContent = candidate?.content;
 
-        if (!reply) {
-            throw new Error("Jawaban akhir Gemini kosong");
+            if (!modelContent) {
+                throw new Error(
+                    "Gemini tidak mengembalikan content. " +
+                    "Finish reason: " +
+                    (candidate?.finishReason || "unknown")
+                );
+            }
+
+            const parts = modelContent.parts || [];
+
+            const functionCalls = parts
+                .filter(part => part.functionCall)
+                .map(part => part.functionCall);
+
+            // Tidak ada tool yang perlu dijalankan
+            if (functionCalls.length === 0) {
+
+                const reply = parts
+                    .filter(part => part.text)
+                    .map(part => part.text)
+                    .join("\n");
+
+                if (reply.trim()) {
+                    return res.status(200).json({ reply });
+                }
+
+                throw new Error(
+                    "Gemini menghasilkan respons tanpa teks. " +
+                    "Finish reason: " +
+                    (candidate.finishReason || "unknown")
+                );
+            }
+
+            // Simpan respons model, termasuk function call
+            contents.push(modelContent);
+
+            // Jalankan seluruh tool yang diminta
+            const functionResponses = [];
+
+            for (const call of functionCalls) {
+
+                try {
+                    const result = await executeTool(
+                        call.name,
+                        call.args || {}
+                    );
+
+                    functionResponses.push({
+                        functionResponse: {
+                            name: call.name,
+                            response: { result },
+                            ...(call.id ? { id: call.id } : {})
+                        }
+                    });
+
+                } catch (error) {
+
+                    functionResponses.push({
+                        functionResponse: {
+                            name: call.name,
+                            response: {
+                                error: error.message
+                            },
+                            ...(call.id ? { id: call.id } : {})
+                        }
+                    });
+                }
+            }
+
+            // Kirim hasil tool kembali ke Gemini
+            contents.push({
+                role: "user",
+                parts: functionResponses
+            });
         }
 
         return res.status(200).json({
-            reply
+            reply: "Maaf, proses permintaan membutuhkan terlalu banyak pemanggilan tool. Coba sederhanakan pertanyaanmu."
         });
 
     } catch (error) {
