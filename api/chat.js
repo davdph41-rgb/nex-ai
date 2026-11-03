@@ -31,10 +31,15 @@ export default async function handler(req,res){
         if(wantsWeather){
 
             const match=message.match(
-                /(?:di|kota|wilayah)\s+(.+?)(?:\?|!|\.|$)/i
-            );
+    /(?:di|kota|wilayah)\s+(.+?)(?:\?|!|\.|,|$)/i
+);
 
-            const city=match?.[1]?.trim()||"Surakarta";
+let city=match?.[1]?.trim()||"Surakarta";
+
+city=city.replace(
+    /\s+(sekarang|saat ini|hari ini|dong|ya|deh)$/i,
+    ""
+).trim();
 
             const locationResponse=await fetch(
                 `https://geocoding-api.open-meteo.com/v1/search`+
