@@ -1,10 +1,51 @@
 *{box-sizing:border-box;margin:0;padding:0}
-body{min-height:100vh;background:#050505;color:white;font-family:Arial,sans-serif;display:flex;align-items:center;justify-content:center}
-.app{width:min(900px,92%);padding:40px;border:1px solid #292929;border-radius:24px;background:#0b0b0f;box-shadow:0 0 60px #30108055}
-h1{font-size:48px}
-p{color:#999;margin-top:8px}
-.chat{min-height:300px;margin-top:35px;padding:20px}
-.message{display:inline-block;padding:15px 20px;border-radius:18px;background:#17131f}
-.input{display:flex;gap:10px}
-input{flex:1;padding:16px;border:1px solid #292929;border-radius:14px;background:#111;color:white;outline:none}
-button{width:55px;border:0;border-radius:14px;background:#6d2cff;color:white;font-size:20px}
+body{min-height:100vh;background:#050507;color:#fff;font-family:Arial,sans-serif}
+button,input{font:inherit}
+.app{display:flex;min-height:100vh;background:radial-gradient(circle at 70% 30%,#24104d55,transparent 35%)}
+
+aside{width:220px;padding:28px 18px;border-right:1px solid #ffffff10;background:#08080c}
+.logo{font-size:27px;font-weight:800;margin-bottom:45px;padding-left:12px}
+.logo span,h1 span{color:#8b4dff}
+nav{display:grid;gap:8px}
+nav button{border:0;background:transparent;color:#777;text-align:left;padding:14px 13px;border-radius:12px;cursor:pointer}
+nav button:hover,.active{background:#ffffff0b!important;color:#fff!important}
+nav b{margin-left:10px;font-weight:500}
+.status{position:absolute;bottom:25px;color:#777;font-size:12px;padding-left:12px}
+.status i{display:inline-block;width:7px;height:7px;background:#5cff9d;border-radius:50%;margin-right:7px}
+
+main{flex:1;max-width:1100px;margin:auto;padding:35px 55px;display:flex;flex-direction:column}
+header{display:flex;justify-content:space-between;align-items:center}
+header small{color:#666;letter-spacing:3px;font-size:10px}
+h1{font-size:25px;margin-top:7px}
+.avatar{width:38px;height:38px;border:1px solid #ffffff18;border-radius:50%;display:grid;place-items:center;color:#aaa}
+
+.hero{text-align:center;margin:90px auto 45px}
+.orb{width:70px;height:70px;margin:auto auto 25px;border-radius:50%;background:radial-gradient(circle,#b67aff,#5b16d4 45%,transparent 70%);box-shadow:0 0 70px #7d35ff99;animation:pulse 3s infinite}
+@keyframes pulse{50%{transform:scale(1.12);opacity:.75}}
+h2{font-size:38px}
+.hero p{color:#777;margin-top:12px}
+
+.chat{max-width:720px;width:100%;margin:auto}
+.message{padding:20px;border:1px solid #ffffff0d;background:#0b0b10;border-radius:18px}
+.message strong{font-size:13px;color:#a46cff}
+.message p{color:#aaa;margin-top:8px}
+.suggestions{display:flex;gap:10px;flex-wrap:wrap;margin-top:15px}
+.suggestions button{padding:11px 15px;border:1px solid #ffffff10;border-radius:12px;background:#0b0b10;color:#888;cursor:pointer}
+.suggestions button:hover{color:#fff;border-color:#713cff}
+
+.input{display:flex;max-width:720px;width:100%;margin:25px auto 0;background:#0b0b10;border:1px solid #ffffff12;border-radius:16px;padding:7px}
+input{flex:1;border:0;outline:0;background:transparent;color:white;padding:13px}
+.input button{width:45px;border:0;border-radius:11px;background:#713cff;color:#fff;cursor:pointer}
+
+footer{display:flex;gap:20px;justify-content:center;margin-top:35px;color:#444;font-size:9px;letter-spacing:2px}
+
+@media(max-width:700px){
+aside{width:65px;padding:20px 8px}
+.logo{padding:0;text-align:center}
+nav b,.status{display:none}
+nav button{text-align:center}
+main{padding:25px 18px}
+h1{font-size:20px}
+h2{font-size:30px}
+.hero{margin-top:70px}
+}
