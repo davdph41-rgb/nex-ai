@@ -17,11 +17,78 @@ export default async function handler(req,res){
             });
         }
 
+        /*
+        =========================
+        WEATHER TOOL
+        =========================
+        */
+
+        const weatherWords=[
+            "cuaca",
+            "weather",
+            "suhu",
+            "temperatur",
+            "hujan",
+            "kelembapan",
+            "angin"
+        ];
+
+        const wantsWeather=
+            weatherWords.some(word=>
+                message.toLowerCase().includes(word)
+            );
+
+        let weatherContext="";
+
+        if(wantsWeather){
+
+            const lat=-7.5755;
+            const lon=110.8243;
+
+            const weatherResponse=await fetch(
+                `https://api.open-meteo.com/v1/forecast`+
+                `?latitude=${lat}`+
+                `&longitude=${lon}`+
+                `&current=temperature_2m,relative_humidity_2m,apparent_temperature,precipitation,weather_code,wind_speed_10m`+
+                `&timezone=auto`
+            );
+
+            const weather=await weatherResponse.json();
+
+            if(weatherResponse.ok&&weather.current){
+
+                weatherContext=`
+DATA CUACA TERKINI:
+Lokasi: Surakarta
+Suhu: ${weather.current.temperature_2m}°C
+Terasa seperti: ${weather.current.apparent_temperature}°C
+Kelembapan: ${weather.current.relative_humidity_2m}%
+Curah hujan: ${weather.current.precipitation} mm
+Kecepatan angin: ${weather.current.wind_speed_10m} km/j
+Weather code: ${weather.current.weather_code}
+
+Gunakan data ini untuk menjawab pertanyaan pengguna.
+Jangan mengarang data cuaca.
+`;
+            }
+        }
+
+        /*
+        =========================
+        GEMINI
+        =========================
+        */
+
         const contents=[
             ...history,
             {
                 role:"user",
-                parts:[{text:message}]
+                parts:[{
+                    text:
+                    weatherContext+
+                    "\n\nPERTANYAAN USER:\n"+
+                    message
+                }]
             }
         ];
 
@@ -37,7 +104,10 @@ export default async function handler(req,res){
                     systemInstruction:{
                         parts:[{
                             text:
-                            "Kamu adalah NEX AI, asisten AI pribadi yang ramah, cerdas dan singkat. Jawab dalam bahasa Indonesia. Ingat dan gunakan konteks percakapan yang diberikan."
+                            "Kamu adalah NEX AI, asisten AI pribadi yang ramah, cerdas dan singkat. "+
+                            "Jawab dalam bahasa Indonesia. "+
+                            "Gunakan konteks percakapan sebelumnya. "+
+                            "Jika diberikan DATA CUACA TERKINI, gunakan data tersebut secara akurat."
                         }]
                     },
                     contents
@@ -63,9 +133,12 @@ export default async function handler(req,res){
             });
         }
 
-        return res.status(200).json({reply});
+        return res.status(200).json({
+            reply
+        });
 
     }catch(error){
+
         console.error(error);
 
         return res.status(500).json({
