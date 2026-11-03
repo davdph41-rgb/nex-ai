@@ -1,76 +1,88 @@
-export default async function handler(req,res){
-    if(req.method!=="POST"){
-        return res.status(405).json({error:"Method not allowed"});
-    }
+const input=document.getElementById("messageInput");
+const send=document.getElementById("sendBtn");
+const chat=document.getElementById("chat");
+
+async function sendMessage(){
+    const message=input.value.trim();
+    if(!message)return;
+
+    document.querySelector(".suggestions")?.remove();
+
+    const user=document.createElement("div");
+    user.className="message user";
+    user.innerHTML=`
+        <strong>YOU</strong>
+        <p>${escapeHTML(message)}</p>
+    `;
+    chat.appendChild(user);
+
+    input.value="";
+    send.disabled=true;
+
+    const loading=document.createElement("div");
+    loading.className="message ai";
+    loading.innerHTML=`
+        <strong>NEX AI</strong>
+        <p>Thinking...</p>
+    `;
+    chat.appendChild(loading);
+
+    chat.scrollTop=chat.scrollHeight;
 
     try{
-        const {message}=req.body||{};
-
-        if(!message){
-            return res.status(400).json({error:"Message kosong"});
-        }
-
-        const apiKey=process.env.GEMINI_API_KEY;
-
-        if(!apiKey){
-            return res.status(500).json({
-                error:"GEMINI_API_KEY belum terbaca di Vercel"
-            });
-        }
-
-        const response=await fetch(
-            "https://generativelanguage.googleapis.com/v1/interactions",
-            {
-                method:"POST",
-                headers:{
-                    "Content-Type":"application/json",
-                    "x-goog-api-key":apiKey
-                },
-                body:JSON.stringify({
-                    model:"gemini-3.8-flash",
-                    input:
-                        "Kamu adalah NEX AI, asisten AI pribadi yang ramah, pintar, dan membantu. Jawab dalam bahasa Indonesia.\n\nUser: "+
-                        message
-                })
-            }
-        );
+        const response=await fetch("/api/chat",{
+            method:"POST",
+            headers:{
+                "Content-Type":"application/json"
+            },
+            body:JSON.stringify({message})
+        });
 
         const data=await response.json();
 
         if(!response.ok){
-            console.error("GEMINI ERROR:",data);
+            const detail=
+                data?.details?.error?.message||
+                data?.message||
+                data?.error||
+                "Request gagal";
 
-            return res.status(response.status).json({
-                error:"Gemini API error",
-                details:data
-            });
+            throw new Error(detail);
         }
 
-        const reply=
-            data?.steps
-                ?.filter(step=>step.type==="model_output")
-                ?.flatMap(step=>step.content||[])
-                ?.find(item=>item.type==="text")
-                ?.text;
-
-        if(!reply){
-            return res.status(500).json({
-                error:"Gemini tidak mengembalikan jawaban",
-                details:data
-            });
-        }
-
-        return res.status(200).json({
-            reply:reply
-        });
+        loading.innerHTML=`
+            <strong>NEX AI</strong>
+            <p>${escapeHTML(data.reply)}</p>
+        `;
 
     }catch(error){
 
-        console.error("SERVER ERROR:",error);
+        console.error(error);
 
-        return res.status(500).json({
-            error:"Server error",
-            message:error?.message||String(error)
-        });
+        loading.innerHTML=`
+            <strong>NEX AI</strong>
+            <p>${escapeHTML(error.message)}</p>
+        `;
     }
+
+    send.disabled=false;
+    input.focus();
+    chat.scrollTop=chat.scrollHeight;
 }
+
+function quickMessage(message){
+    input.value=message;
+    sendMessage();
+}
+
+function escapeHTML(text){
+    const div=document.createElement("div");
+    div.textContent=String(text);
+    return div.innerHTML;
+}
+
+send.onclick=sendMessage;
+
+input.addEventListener("keydown",e=>{
+    if(e.key==="Enter")sendMessage();
+});
