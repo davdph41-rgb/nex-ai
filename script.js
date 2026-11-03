@@ -27,14 +27,23 @@ async function sendMessage(){
     `;
     chat.appendChild(loading);
 
+    const controller=new AbortController();
+
+    const timer=setTimeout(()=>{
+        controller.abort();
+    },10000);
+
     try{
         const response=await fetch("/api/chat",{
             method:"POST",
             headers:{
                 "Content-Type":"application/json"
             },
-            body:JSON.stringify({message})
+            body:JSON.stringify({message}),
+            signal:controller.signal
         });
+
+        clearTimeout(timer);
 
         const text=await response.text();
 
@@ -44,7 +53,7 @@ async function sendMessage(){
             data=JSON.parse(text);
         }catch{
             throw new Error(
-                `Server error (${response.status}): ${text.slice(0,300)}`
+                `Server error (${response.status})`
             );
         }
 
@@ -59,7 +68,7 @@ async function sendMessage(){
         }
 
         if(!data.reply){
-            throw new Error("NEX AI tidak menerima jawaban dari Gemini.");
+            throw new Error("Jawaban AI kosong.");
         }
 
         loading.innerHTML=`
@@ -69,16 +78,24 @@ async function sendMessage(){
 
     }catch(error){
 
-        console.error(error);
+        clearTimeout(timer);
 
-        loading.innerHTML=`
-            <strong>NEX AI ERROR</strong>
-            <p>${escapeHTML(error.message)}</p>
-        `;
+        if(error.name==="AbortError"){
+            loading.innerHTML=`
+                <strong>NEX AI</strong>
+                <p>Gemini terlalu lama merespons. Coba lagi sebentar.</p>
+            `;
+        }else{
+            loading.innerHTML=`
+                <strong>NEX AI ERROR</strong>
+                <p>${escapeHTML(error.message)}</p>
+            `;
+        }
     }
 
     send.disabled=false;
     input.focus();
+    chat.scrollTop=chat.scrollHeight;
 }
 
 function quickMessage(message){
