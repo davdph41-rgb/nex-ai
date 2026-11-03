@@ -2,6 +2,8 @@ const input=document.getElementById("messageInput");
 const send=document.getElementById("sendBtn");
 const chat=document.getElementById("chat");
 
+let history=[];
+
 async function sendMessage(){
     const message=input.value.trim();
     if(!message)return;
@@ -27,23 +29,17 @@ async function sendMessage(){
     `;
     chat.appendChild(loading);
 
-    const controller=new AbortController();
-
-    const timer=setTimeout(()=>{
-        controller.abort();
-    },10000);
-
     try{
         const response=await fetch("/api/chat",{
             method:"POST",
             headers:{
                 "Content-Type":"application/json"
             },
-            body:JSON.stringify({message}),
-            signal:controller.signal
+            body:JSON.stringify({
+                message,
+                history
+            })
         });
-
-        clearTimeout(timer);
 
         const text=await response.text();
 
@@ -52,9 +48,7 @@ async function sendMessage(){
         try{
             data=JSON.parse(text);
         }catch{
-            throw new Error(
-                `Server error (${response.status})`
-            );
+            throw new Error(`Server error (${response.status})`);
         }
 
         if(!response.ok){
@@ -76,21 +70,22 @@ async function sendMessage(){
             <p>${escapeHTML(data.reply)}</p>
         `;
 
+        history.push({
+            role:"user",
+            parts:[{text:message}]
+        });
+
+        history.push({
+            role:"model",
+            parts:[{text:data.reply}]
+        });
+
     }catch(error){
 
-        clearTimeout(timer);
-
-        if(error.name==="AbortError"){
-            loading.innerHTML=`
-                <strong>NEX AI</strong>
-                <p>Gemini terlalu lama merespons. Coba lagi sebentar.</p>
-            `;
-        }else{
-            loading.innerHTML=`
-                <strong>NEX AI ERROR</strong>
-                <p>${escapeHTML(error.message)}</p>
-            `;
-        }
+        loading.innerHTML=`
+            <strong>NEX AI ERROR</strong>
+            <p>${escapeHTML(error.message)}</p>
+        `;
     }
 
     send.disabled=false;
