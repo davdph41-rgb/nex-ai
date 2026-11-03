@@ -12,6 +12,7 @@
 
 <aside>
     <div class="logo">NEX<span>.</span></div>
+
     <nav>
         <button class="active">⌂ <b>Home</b></button>
         <button>✦ <b>AI Chat</b></button>
@@ -19,6 +20,7 @@
         <button>▣ <b>Projects</b></button>
         <button>⚙ <b>Settings</b></button>
     </nav>
+
     <div class="status"><i></i> System Online</div>
 </aside>
 
@@ -29,6 +31,7 @@
         <small>NEX AI SYSTEM</small>
         <h1>Your AI. <span>Connected.</span></h1>
     </div>
+
     <div class="avatar">D</div>
 </header>
 
@@ -38,7 +41,50 @@
     <p>Ask anything, manage your projects, or connect your world.</p>
 </section>
 
-<section class="chat">
+<section class="chat" id="chat">
+
     <div class="message ai">
         <strong>NEX AI</strong>
-        <p>Halo! 👋 Aku NEX AI. Ada
+        <p>Halo! 👋 Aku NEX AI. Ada yang ingin kamu kerjakan?</p>
+    </div>
+
+    <div class="suggestions">
+        <button onclick="quickMessage('Ceritakan tentang dirimu')">
+            ✦ About NEX AI
+        </button>
+
+        <button onclick="quickMessage('Apa yang bisa kamu lakukan?')">
+            ⌘ What can you do?
+        </button>
+
+        <button onclick="quickMessage('Bantu saya membuat ide project')">
+            ✦ Project ideas
+        </button>
+    </div>
+
+</section>
+
+<div class="input">
+    <input
+        id="messageInput"
+        type="text"
+        placeholder="Ask NEX anything..."
+        autocomplete="off"
+    >
+
+    <button id="sendBtn">➤</button>
+</div>
+
+<footer>
+    <span>AI CORE</span>
+    <span>API READY</span>
+    <span>v1.0</span>
+</footer>
+
+</main>
+</div>
+
+<script src="script.js"></script>
+
+</body>
+</html>
