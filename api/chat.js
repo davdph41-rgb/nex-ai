@@ -17,9 +17,11 @@ export default async function handler(req,res){
             });
         }
 
+        let weatherContext="";
+
         /*
         =========================
-        WEATHER TOOL
+        WEATHER + LOCATION TOOL
         =========================
         */
 
@@ -33,43 +35,85 @@ export default async function handler(req,res){
             "angin"
         ];
 
-        const wantsWeather=
-            weatherWords.some(word=>
-                message.toLowerCase().includes(word)
-            );
-
-        let weatherContext="";
+        const wantsWeather=weatherWords.some(word=>
+            message.toLowerCase().includes(word)
+        );
 
         if(wantsWeather){
 
-            const lat=-7.5755;
-            const lon=110.8243;
+            /*
+            Cari nama lokasi dari kalimat user.
+            Contoh:
+            "cuaca di Jakarta"
+            "suhu Bandung"
+            */
 
-            const weatherResponse=await fetch(
-                `https://api.open-meteo.com/v1/forecast`+
-                `?latitude=${lat}`+
-                `&longitude=${lon}`+
-                `&current=temperature_2m,relative_humidity_2m,apparent_temperature,precipitation,weather_code,wind_speed_10m`+
-                `&timezone=auto`
+            let city="Surakarta";
+
+            const match=message.match(
+                /(?:di|kota|wilayah)\s+([a-zA-ZÀ-ÿ\s-]+)/i
             );
 
-            const weather=await weatherResponse.json();
+            if(match){
+                city=match[1]
+                    .trim()
+                    .replace(/[?.!,]+$/,"");
+            }
 
-            if(weatherResponse.ok&&weather.current){
+            /*
+            LOCATION TOOL
+            */
 
-                weatherContext=`
+            const locationResponse=await fetch(
+                `https://geocoding-api.open-meteo.com/v1/search`+
+                `?name=${encodeURIComponent(city)}`+
+                `&count=1`+
+                `&language=id`+
+                `&format=json`
+            );
+
+            const locationData=await locationResponse.json();
+
+            const location=locationData?.results?.[0];
+
+            if(location){
+
+                /*
+                WEATHER TOOL
+                */
+
+                const weatherResponse=await fetch(
+                    `https://api.open-meteo.com/v1/forecast`+
+                    `?latitude=${location.latitude}`+
+                    `&longitude=${location.longitude}`+
+                    `&current=temperature_2m,relative_humidity_2m,apparent_temperature,precipitation,weather_code,wind_speed_10m`+
+                    `&timezone=auto`
+                );
+
+                const weather=await weatherResponse.json();
+
+                if(weatherResponse.ok&&weather.current){
+
+                    weatherContext=`
 DATA CUACA TERKINI:
-Lokasi: Surakarta
+
+Lokasi: ${location.name}, ${location.country}
+
+Latitude: ${location.latitude}
+Longitude: ${location.longitude}
+
 Suhu: ${weather.current.temperature_2m}°C
 Terasa seperti: ${weather.current.apparent_temperature}°C
 Kelembapan: ${weather.current.relative_humidity_2m}%
 Curah hujan: ${weather.current.precipitation} mm
 Kecepatan angin: ${weather.current.wind_speed_10m} km/j
 Weather code: ${weather.current.weather_code}
+Zona waktu: ${weather.timezone}
 
 Gunakan data ini untuk menjawab pertanyaan pengguna.
 Jangan mengarang data cuaca.
 `;
+                }
             }
         }
 
@@ -104,10 +148,11 @@ Jangan mengarang data cuaca.
                     systemInstruction:{
                         parts:[{
                             text:
-                            "Kamu adalah NEX AI, asisten AI pribadi yang ramah, cerdas dan singkat. "+
-                            "Jawab dalam bahasa Indonesia. "+
+                            "Kamu adalah NEX AI, asisten AI pribadi yang ramah, "+
+                            "cerdas dan singkat. Jawab dalam bahasa Indonesia. "+
                             "Gunakan konteks percakapan sebelumnya. "+
-                            "Jika diberikan DATA CUACA TERKINI, gunakan data tersebut secara akurat."
+                            "Jika diberikan DATA CUACA TERKINI, gunakan data tersebut "+
+                            "dan jangan mengarang informasi."
                         }]
                     },
                     contents
