@@ -36,17 +36,30 @@ async function sendMessage(){
             body:JSON.stringify({message})
         });
 
-        const data=await response.json();
+        const text=await response.text();
+
+        let data;
+
+        try{
+            data=JSON.parse(text);
+        }catch{
+            throw new Error(
+                `Server error (${response.status}): ${text.slice(0,300)}`
+            );
+        }
 
         if(!response.ok){
             const detail=
-                data?.details?.error?.message ||
-                data?.details?.message ||
-                data?.message ||
-                data?.error ||
-                "Unknown error";
+                data?.details?.error?.message||
+                data?.message||
+                data?.error||
+                "Request gagal";
 
             throw new Error(detail);
+        }
+
+        if(!data.reply){
+            throw new Error("NEX AI tidak menerima jawaban dari Gemini.");
         }
 
         loading.innerHTML=`
@@ -66,18 +79,17 @@ async function sendMessage(){
 
     send.disabled=false;
     input.focus();
-    chat.scrollTop=chat.scrollHeight;
+}
+
+function quickMessage(message){
+    input.value=message;
+    sendMessage();
 }
 
 function escapeHTML(text){
     const div=document.createElement("div");
     div.textContent=String(text);
     return div.innerHTML;
-}
-
-function quickMessage(message){
-    input.value=message;
-    sendMessage();
 }
 
 send.onclick=sendMessage;
