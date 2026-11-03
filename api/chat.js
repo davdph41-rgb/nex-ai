@@ -4,7 +4,7 @@ export default async function handler(req,res){
     }
 
     try{
-        const {message}=req.body||{};
+        const {message,history=[]}=req.body||{};
         const key=process.env.GEMINI_API_KEY;
 
         if(!message){
@@ -17,6 +17,14 @@ export default async function handler(req,res){
             });
         }
 
+        const contents=[
+            ...history,
+            {
+                role:"user",
+                parts:[{text:message}]
+            }
+        ];
+
         const response=await fetch(
             "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash-lite:generateContent",
             {
@@ -26,17 +34,13 @@ export default async function handler(req,res){
                     "x-goog-api-key":key
                 },
                 body:JSON.stringify({
-                    contents:[
-                        {
-                            parts:[
-                                {
-                                    text:
-                                    "Kamu adalah NEX AI, asisten AI pribadi yang ramah dan singkat. Jawab dalam bahasa Indonesia.\n\n"+
-                                    message
-                                }
-                            ]
-                        }
-                    ]
+                    systemInstruction:{
+                        parts:[{
+                            text:
+                            "Kamu adalah NEX AI, asisten AI pribadi yang ramah, cerdas dan singkat. Jawab dalam bahasa Indonesia. Ingat dan gunakan konteks percakapan yang diberikan."
+                        }]
+                    },
+                    contents
                 })
             }
         );
@@ -59,9 +63,7 @@ export default async function handler(req,res){
             });
         }
 
-        return res.status(200).json({
-            reply
-        });
+        return res.status(200).json({reply});
 
     }catch(error){
         console.error(error);
