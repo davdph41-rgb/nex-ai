@@ -1,51 +1,366 @@
 *{box-sizing:border-box;margin:0;padding:0}
-body{min-height:100vh;background:#050507;color:#fff;font-family:Arial,sans-serif}
-button,input{font:inherit}
-.app{display:flex;min-height:100vh;background:radial-gradient(circle at 70% 30%,#24104d55,transparent 35%)}
 
-aside{width:220px;padding:28px 18px;border-right:1px solid #ffffff10;background:#08080c}
-.logo{font-size:27px;font-weight:800;margin-bottom:45px;padding-left:12px}
-.logo span,h1 span{color:#8b4dff}
-nav{display:grid;gap:8px}
-nav button{border:0;background:transparent;color:#777;text-align:left;padding:14px 13px;border-radius:12px;cursor:pointer}
-nav button:hover,.active{background:#ffffff0b!important;color:#fff!important}
-nav b{margin-left:10px;font-weight:500}
-.status{position:absolute;bottom:25px;color:#777;font-size:12px;padding-left:12px}
-.status i{display:inline-block;width:7px;height:7px;background:#5cff9d;border-radius:50%;margin-right:7px}
+html,body{
+    min-height:100%;
+}
 
-main{flex:1;max-width:1100px;margin:auto;padding:35px 55px;display:flex;flex-direction:column}
-header{display:flex;justify-content:space-between;align-items:center}
-header small{color:#666;letter-spacing:3px;font-size:10px}
-h1{font-size:25px;margin-top:7px}
-.avatar{width:38px;height:38px;border:1px solid #ffffff18;border-radius:50%;display:grid;place-items:center;color:#aaa}
+body{
+    min-height:100vh;
+    background:#050507;
+    color:#fff;
+    font-family:Arial,sans-serif;
+}
 
-.hero{text-align:center;margin:90px auto 45px}
-.orb{width:70px;height:70px;margin:auto auto 25px;border-radius:50%;background:radial-gradient(circle,#b67aff,#5b16d4 45%,transparent 70%);box-shadow:0 0 70px #7d35ff99;animation:pulse 3s infinite}
-@keyframes pulse{50%{transform:scale(1.12);opacity:.75}}
-h2{font-size:38px}
-.hero p{color:#777;margin-top:12px}
+button,input{
+    font:inherit;
+}
 
-.chat{max-width:720px;width:100%;margin:auto}
-.message{padding:20px;border:1px solid #ffffff0d;background:#0b0b10;border-radius:18px}
-.message strong{font-size:13px;color:#a46cff}
-.message p{color:#aaa;margin-top:8px}
-.suggestions{display:flex;gap:10px;flex-wrap:wrap;margin-top:15px}
-.suggestions button{padding:11px 15px;border:1px solid #ffffff10;border-radius:12px;background:#0b0b10;color:#888;cursor:pointer}
-.suggestions button:hover{color:#fff;border-color:#713cff}
+button{
+    cursor:pointer;
+}
 
-.input{display:flex;max-width:720px;width:100%;margin:25px auto 0;background:#0b0b10;border:1px solid #ffffff12;border-radius:16px;padding:7px}
-input{flex:1;border:0;outline:0;background:transparent;color:white;padding:13px}
-.input button{width:45px;border:0;border-radius:11px;background:#713cff;color:#fff;cursor:pointer}
+.app{
+    min-height:100vh;
+    display:flex;
+    background:
+    radial-gradient(circle at 70% 20%,#24104d55,transparent 35%);
+}
 
-footer{display:flex;gap:20px;justify-content:center;margin-top:35px;color:#444;font-size:9px;letter-spacing:2px}
+/* SIDEBAR */
+
+aside{
+    width:220px;
+    padding:28px 18px;
+    border-right:1px solid #ffffff10;
+    background:#08080c;
+    position:relative;
+}
+
+.logo{
+    font-size:27px;
+    font-weight:800;
+    margin-bottom:45px;
+    padding-left:12px;
+}
+
+.logo span,
+h1 span{
+    color:#8b4dff;
+}
+
+nav{
+    display:grid;
+    gap:8px;
+}
+
+nav button{
+    width:100%;
+    border:0;
+    background:transparent;
+    color:#777;
+    text-align:left;
+    padding:14px 13px;
+    border-radius:12px;
+    transition:.2s;
+}
+
+nav button:hover,
+nav button.active{
+    background:#ffffff0b;
+    color:#fff;
+}
+
+nav b{
+    margin-left:10px;
+    font-weight:500;
+}
+
+.status{
+    position:absolute;
+    bottom:25px;
+    left:25px;
+    color:#777;
+    font-size:12px;
+}
+
+.status i{
+    display:inline-block;
+    width:7px;
+    height:7px;
+    background:#5cff9d;
+    border-radius:50%;
+    margin-right:7px;
+}
+
+/* MAIN */
+
+main{
+    flex:1;
+    width:100%;
+    max-width:1100px;
+    margin:auto;
+    padding:35px 55px;
+    display:flex;
+    flex-direction:column;
+}
+
+/* HEADER */
+
+header{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+}
+
+header small{
+    color:#666;
+    letter-spacing:3px;
+    font-size:10px;
+}
+
+h1{
+    font-size:25px;
+    margin-top:7px;
+}
+
+.avatar{
+    width:38px;
+    height:38px;
+    border:1px solid #ffffff18;
+    border-radius:50%;
+    display:grid;
+    place-items:center;
+    color:#aaa;
+}
+
+/* HERO */
+
+.hero{
+    text-align:center;
+    margin:80px auto 40px;
+}
+
+.orb{
+    width:70px;
+    height:70px;
+    margin:auto auto 25px;
+    border-radius:50%;
+    background:
+    radial-gradient(
+        circle,
+        #b67aff,
+        #5b16d4 45%,
+        transparent 70%
+    );
+    box-shadow:0 0 70px #7d35ff99;
+    animation:pulse 3s infinite;
+}
+
+@keyframes pulse{
+    50%{
+        transform:scale(1.12);
+        opacity:.75;
+    }
+}
+
+h2{
+    font-size:38px;
+}
+
+.hero p{
+    color:#777;
+    margin-top:12px;
+}
+
+/* CHAT */
+
+.chat{
+    width:100%;
+    max-width:720px;
+    margin:auto;
+    overflow-y:auto;
+}
+
+.message{
+    padding:18px 20px;
+    border:1px solid #ffffff0d;
+    background:#0b0b10;
+    border-radius:18px;
+    margin-bottom:12px;
+    animation:appear .25s ease;
+}
+
+.message strong{
+    font-size:13px;
+    color:#a46cff;
+}
+
+.message p{
+    color:#aaa;
+    margin-top:8px;
+    line-height:1.5;
+    white-space:pre-wrap;
+}
+
+.message.user{
+    background:#111019;
+}
+
+.message.user strong{
+    color:#fff;
+}
+
+@keyframes appear{
+    from{
+        opacity:0;
+        transform:translateY(8px);
+    }
+
+    to{
+        opacity:1;
+        transform:translateY(0);
+    }
+}
+
+/* SUGGESTIONS */
+
+.suggestions{
+    display:flex;
+    gap:10px;
+    flex-wrap:wrap;
+    margin-top:15px;
+}
+
+.suggestions button{
+    padding:11px 15px;
+    border:1px solid #ffffff10;
+    border-radius:12px;
+    background:#0b0b10;
+    color:#888;
+    transition:.2s;
+}
+
+.suggestions button:hover{
+    color:#fff;
+    border-color:#713cff;
+}
+
+/* INPUT */
+
+.input{
+    display:flex;
+    width:100%;
+    max-width:720px;
+    margin:25px auto 0;
+    background:#0b0b10;
+    border:1px solid #ffffff15;
+    border-radius:16px;
+    padding:7px;
+    box-shadow:0 10px 40px #0005;
+}
+
+.input:focus-within{
+    border-color:#713cff88;
+    box-shadow:0 0 30px #713cff22;
+}
+
+.input input{
+    flex:1;
+    min-width:0;
+    border:0;
+    outline:0;
+    background:transparent;
+    color:#fff;
+    padding:13px;
+}
+
+.input input::placeholder{
+    color:#555;
+}
+
+.input button{
+    width:45px;
+    height:45px;
+    border:0;
+    border-radius:11px;
+    background:#713cff;
+    color:#fff;
+    font-size:18px;
+    transition:.2s;
+}
+
+.input button:hover{
+    background:#8b4dff;
+    transform:scale(1.04);
+}
+
+.input button:disabled{
+    opacity:.5;
+    cursor:not-allowed;
+}
+
+/* FOOTER */
+
+footer{
+    display:flex;
+    gap:20px;
+    justify-content:center;
+    margin-top:30px;
+    color:#444;
+    font-size:9px;
+    letter-spacing:2px;
+}
+
+/* MOBILE */
 
 @media(max-width:700px){
-aside{width:65px;padding:20px 8px}
-.logo{padding:0;text-align:center}
-nav b,.status{display:none}
-nav button{text-align:center}
-main{padding:25px 18px}
-h1{font-size:20px}
-h2{font-size:30px}
-.hero{margin-top:70px}
+
+    aside{
+        width:65px;
+        padding:20px 8px;
+    }
+
+    .logo{
+        padding:0;
+        text-align:center;
+        margin-bottom:35px;
+    }
+
+    nav b,
+    .status{
+        display:none;
+    }
+
+    nav button{
+        text-align:center;
+        padding:13px 5px;
+    }
+
+    main{
+        padding:22px 15px;
+    }
+
+    h1{
+        font-size:20px;
+    }
+
+    h2{
+        font-size:29px;
+    }
+
+    .hero{
+        margin-top:65px;
+    }
+
+    .hero p{
+        font-size:13px;
+    }
+
+    .input{
+        margin-top:18px;
+    }
+
+    footer{
+        margin-bottom:10px;
+    }
 }
