@@ -1,20 +1,15 @@
 export default async function handler(req,res){
-    try{
-        if(req.method!=="POST"){
-            return res.status(405).json({
-                error:"Method not allowed"
-            });
-        }
+    if(req.method!=="POST"){
+        return res.status(405).json({error:"Method not allowed"});
+    }
 
-        const message=req.body?.message;
+    try{
+        const {message}=req.body||{};
+        const key=process.env.GEMINI_API_KEY;
 
         if(!message){
-            return res.status(400).json({
-                error:"Message kosong"
-            });
+            return res.status(400).json({error:"Message kosong"});
         }
-
-        const key=process.env.GEMINI_API_KEY;
 
         if(!key){
             return res.status(500).json({
@@ -22,45 +17,34 @@ export default async function handler(req,res){
             });
         }
 
-        const url=
-            "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent?key="+
-            encodeURIComponent(key);
+        const response=await fetch(
+            "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash-lite:generateContent",
+            {
+                method:"POST",
+                headers:{
+                    "Content-Type":"application/json",
+                    "x-goog-api-key":key
+                },
+                body:JSON.stringify({
+                    contents:[
+                        {
+                            parts:[
+                                {
+                                    text:
+                                    "Kamu adalah NEX AI, asisten AI pribadi yang ramah dan singkat. Jawab dalam bahasa Indonesia.\n\n"+
+                                    message
+                                }
+                            ]
+                        }
+                    ]
+                })
+            }
+        );
 
-        const result=await fetch(url,{
-            method:"POST",
-            headers:{
-                "Content-Type":"application/json"
-            },
-            body:JSON.stringify({
-                contents:[
-                    {
-                        parts:[
-                            {
-                                text:
-                                "Kamu adalah NEX AI, asisten AI pribadi. Jawab dalam bahasa Indonesia dengan jelas dan ramah.\n\n"+
-                                "User: "+message
-                            }
-                        ]
-                    }
-                ]
-            })
-        });
+        const data=await response.json();
 
-        const text=await result.text();
-
-        let data;
-
-        try{
-            data=JSON.parse(text);
-        }catch{
-            return res.status(500).json({
-                error:"Gemini mengirim response yang tidak valid",
-                raw:text
-            });
-        }
-
-        if(!result.ok){
-            return res.status(result.status).json({
+        if(!response.ok){
+            return res.status(response.status).json({
                 error:"Gemini API error",
                 details:data
             });
@@ -71,8 +55,7 @@ export default async function handler(req,res){
 
         if(!reply){
             return res.status(500).json({
-                error:"Jawaban Gemini kosong",
-                details:data
+                error:"Gemini tidak memberikan jawaban"
             });
         }
 
@@ -81,12 +64,11 @@ export default async function handler(req,res){
         });
 
     }catch(error){
-
-        console.error("NEX ERROR:",error);
+        console.error(error);
 
         return res.status(500).json({
-            error:"NEX backend error",
-            message:error?.message||"Unknown error"
+            error:"Server error",
+            message:error.message
         });
     }
 }
