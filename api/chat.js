@@ -19,20 +19,9 @@ export default async function handler(req,res){
 
         let weatherContext="";
 
-        /*
-        =========================
-        WEATHER + LOCATION TOOL
-        =========================
-        */
-
         const weatherWords=[
-            "cuaca",
-            "weather",
-            "suhu",
-            "temperatur",
-            "hujan",
-            "kelembapan",
-            "angin"
+            "cuaca","weather","suhu","temperatur",
+            "hujan","kelembapan","angin"
         ];
 
         const wantsWeather=weatherWords.some(word=>
@@ -41,97 +30,69 @@ export default async function handler(req,res){
 
         if(wantsWeather){
 
-            /*
-            Cari nama lokasi dari kalimat user.
-            Contoh:
-            "cuaca di Jakarta"
-            "suhu Bandung"
-            */
-
-            let city="Surakarta";
-
             const match=message.match(
-                /(?:di|kota|wilayah)\s+([a-zA-ZÀ-ÿ\s-]+)/i
+                /(?:di|kota|wilayah)\s+(.+?)(?:\?|!|\.|$)/i
             );
 
-            if(match){
-                city=match[1]
-                    .trim()
-                    .replace(/[?.!,]+$/,"");
-            }
-
-            /*
-            LOCATION TOOL
-            */
+            const city=match?.[1]?.trim()||"Surakarta";
 
             const locationResponse=await fetch(
                 `https://geocoding-api.open-meteo.com/v1/search`+
                 `?name=${encodeURIComponent(city)}`+
-                `&count=1`+
-                `&language=id`+
-                `&format=json`
+                `&count=10&language=id&format=json`
             );
 
             const locationData=await locationResponse.json();
 
-            const location=locationData?.results?.[0];
+            const results=locationData.results||[];
 
-            if(location){
+            const location=
+                results.find(item=>item.country_code==="ID")||
+                results.find(item=>item.country==="Indonesia");
 
-                /*
-                WEATHER TOOL
-                */
+            if(!location){
+                return res.status(200).json({
+                    reply:`Maaf, aku belum menemukan lokasi "${city}". Bisa sebutkan nama kota atau kabupatennya dengan lebih lengkap?`
+                });
+            }
 
-                const weatherResponse=await fetch(
-                    `https://api.open-meteo.com/v1/forecast`+
-                    `?latitude=${location.latitude}`+
-                    `&longitude=${location.longitude}`+
-                    `&current=temperature_2m,relative_humidity_2m,apparent_temperature,precipitation,weather_code,wind_speed_10m`+
-                    `&timezone=auto`
-                );
+            const weatherResponse=await fetch(
+                `https://api.open-meteo.com/v1/forecast`+
+                `?latitude=${location.latitude}`+
+                `&longitude=${location.longitude}`+
+                `&current=temperature_2m,relative_humidity_2m,apparent_temperature,precipitation,weather_code,wind_speed_10m`+
+                `&timezone=auto`
+            );
 
-                const weather=await weatherResponse.json();
+            const weather=await weatherResponse.json();
 
-                if(weatherResponse.ok&&weather.current){
+            if(!weatherResponse.ok||!weather.current){
+                throw new Error("Data cuaca tidak tersedia");
+            }
 
-                    weatherContext=`
+            weatherContext=`
 DATA CUACA TERKINI:
-
 Lokasi: ${location.name}, ${location.country}
-
-Latitude: ${location.latitude}
-Longitude: ${location.longitude}
-
 Suhu: ${weather.current.temperature_2m}°C
-Terasa seperti: ${weather.current.apparent_temperature}°C
+Terasa: ${weather.current.apparent_temperature}°C
 Kelembapan: ${weather.current.relative_humidity_2m}%
-Curah hujan: ${weather.current.precipitation} mm
-Kecepatan angin: ${weather.current.wind_speed_10m} km/j
+Hujan: ${weather.current.precipitation} mm
+Angin: ${weather.current.wind_speed_10m} km/jam
 Weather code: ${weather.current.weather_code}
+Waktu data: ${weather.current.time}
 Zona waktu: ${weather.timezone}
 
-Gunakan data ini untuk menjawab pertanyaan pengguna.
-Jangan mengarang data cuaca.
+Gunakan data ini secara akurat.
 `;
-                }
-            }
         }
-
-        /*
-        =========================
-        GEMINI
-        =========================
-        */
 
         const contents=[
             ...history,
             {
                 role:"user",
                 parts:[{
-                    text:
-                    weatherContext+
-                    "\n\nPERTANYAAN USER:\n"+
-                    message
+                    text:weatherContext+
+                    "\n\nPERTANYAAN USER:\n"+message
                 }]
             }
         ];
@@ -148,11 +109,10 @@ Jangan mengarang data cuaca.
                     systemInstruction:{
                         parts:[{
                             text:
-                            "Kamu adalah NEX AI, asisten AI pribadi yang ramah, "+
-                            "cerdas dan singkat. Jawab dalam bahasa Indonesia. "+
-                            "Gunakan konteks percakapan sebelumnya. "+
-                            "Jika diberikan DATA CUACA TERKINI, gunakan data tersebut "+
-                            "dan jangan mengarang informasi."
+                            "Kamu adalah NEX AI, asisten AI pribadi. "+
+                            "Jawab dalam bahasa Indonesia dengan ramah. "+
+                            "Gunakan riwayat percakapan. "+
+                            "Jangan pernah mengarang data cuaca."
                         }]
                     },
                     contents
@@ -173,17 +133,12 @@ Jangan mengarang data cuaca.
             data?.candidates?.[0]?.content?.parts?.[0]?.text;
 
         if(!reply){
-            return res.status(500).json({
-                error:"Gemini tidak memberikan jawaban"
-            });
+            throw new Error("Jawaban Gemini kosong");
         }
 
-        return res.status(200).json({
-            reply
-        });
+        return res.status(200).json({reply});
 
     }catch(error){
-
         console.error(error);
 
         return res.status(500).json({
