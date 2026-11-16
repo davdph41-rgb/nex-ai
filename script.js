@@ -160,6 +160,7 @@ function renderConversationList() {
 // CREATE NEW CHAT
 // ==========================
 
+
 async function createConversation(title = "Chat Baru") {
     const data = await apiRequest("/api/conversations", {
         method: "POST",
@@ -171,10 +172,10 @@ async function createConversation(title = "Chat Baru") {
 
     await loadConversations();
 
-    renderConversation();
-
     return conversationId;
 }
+
+
 
 async function startNewChat() {
     if (isLoading) return;
@@ -182,6 +183,7 @@ async function startNewChat() {
     try {
         await createConversation("Chat Baru");
 
+        renderConversation();
         navigateTo("chat");
         input.focus();
 
@@ -189,6 +191,7 @@ async function startNewChat() {
         alert("Gagal membuat chat: " + error.message);
     }
 }
+
 
 newChatBtn.addEventListener("click", startNewChat);
 
