@@ -160,7 +160,6 @@ function renderConversationList() {
 // CREATE NEW CHAT
 // ==========================
 
-
 async function createConversation(title = "Chat Baru") {
     const data = await apiRequest("/api/conversations", {
         method: "POST",
@@ -175,7 +174,37 @@ async function createConversation(title = "Chat Baru") {
     return conversationId;
 }
 
+// ==========================
+// AUTOMATIC CHAT TITLE
+// ==========================
 
+function makeConversationTitle(message) {
+    const cleanMessage = message
+        .replace(/\s+/g, " ")
+        .trim();
+
+    if (cleanMessage.length > 45) {
+        return cleanMessage.slice(0, 44) + "…";
+    }
+
+    return cleanMessage;
+}
+
+async function updateConversationTitle(id, message) {
+    const title = makeConversationTitle(message);
+
+    await apiRequest("/api/conversations", {
+        method: "PATCH",
+        body: JSON.stringify({
+            id,
+            title
+        })
+    });
+}
+
+// ==========================
+// START NEW CHAT
+// ==========================
 
 async function startNewChat() {
     if (isLoading) return;
@@ -191,7 +220,6 @@ async function startNewChat() {
         alert("Gagal membuat chat: " + error.message);
     }
 }
-
 
 newChatBtn.addEventListener("click", startNewChat);
 
@@ -319,10 +347,13 @@ async function sendMessage() {
     try {
         // Buat chat otomatis jika belum ada
         if (!conversationId) {
-            await createConversation(message.slice(0, 45));
+            await createConversation("Chat Baru");
         }
 
-        // Simpan riwayat lama untuk dikirim ke Gemini
+        // Periksa apakah ini pesan pertama
+        const isFirstMessage = conversation.length === 0;
+
+        // Simpan riwayat lama untuk Gemini
         const previousHistory = [...conversation];
 
         // Simpan pesan pengguna ke Neon
@@ -335,13 +366,23 @@ async function sendMessage() {
             })
         });
 
-        // Masukkan pesan pengguna ke riwayat lokal sementara
+        // Perbarui judul jika pesan pertama
+        if (isFirstMessage) {
+            await updateConversationTitle(
+                conversationId,
+                message
+            );
+
+            await loadConversations();
+        }
+
+        // Masukkan pesan pengguna ke riwayat
         conversation.push({
             role: "user",
             parts: [{ text: message }]
         });
 
-        // Kirim ke Gemini melalui API lama
+        // Kirim ke Gemini
         const data = await apiRequest("/api/chat", {
             method: "POST",
             body: JSON.stringify({
@@ -364,7 +405,7 @@ async function sendMessage() {
             })
         });
 
-        // Simpan jawaban ke riwayat aktif
+        // Masukkan jawaban ke riwayat
         conversation.push({
             role: "model",
             parts: [{ text: data.reply }]
@@ -388,6 +429,10 @@ async function sendMessage() {
         chat.scrollTop = chat.scrollHeight;
     }
 }
+
+// ==========================
+// MESSAGE FUNCTIONS
+// ==========================
 
 function addMessage(name, text, type) {
     const message = document.createElement("div");
