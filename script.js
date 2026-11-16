@@ -3,16 +3,46 @@ const input = document.getElementById("messageInput");
 const send = document.getElementById("sendBtn");
 const chat = document.getElementById("chatMessages");
 
+const newChatBtn = document.getElementById("newChatBtn");
+const conversationList = document.getElementById("conversationList");
+
+let conversationId = null;
 let conversation = [];
+let conversations = [];
+let isLoading = false;
 
-try {
-    conversation = JSON.parse(
-        localStorage.getItem("nexConversation") || "[]"
-    );
+// ==========================
+// API HELPER
+// ==========================
 
-    if (!Array.isArray(conversation)) conversation = [];
-} catch {
-    conversation = [];
+async function apiRequest(url, options = {}) {
+    const response = await fetch(url, {
+        ...options,
+        headers: {
+            "Content-Type": "application/json",
+            ...(options.headers || {})
+        }
+    });
+
+    const text = await response.text();
+
+    let data;
+
+    try {
+        data = JSON.parse(text);
+    } catch {
+        throw new Error(`Server error (${response.status})`);
+    }
+
+    if (!response.ok) {
+        throw new Error(
+            data.message ||
+            data.error ||
+            "Permintaan gagal"
+        );
+    }
+
+    return data;
 }
 
 // ==========================
@@ -65,7 +95,6 @@ navButtons.forEach(button => {
     });
 });
 
-// Dashboard shortcuts and page buttons
 document.querySelectorAll("[data-go]").forEach(button => {
     button.addEventListener("click", () => {
         navigateTo(button.dataset.go);
@@ -73,7 +102,132 @@ document.querySelectorAll("[data-go]").forEach(button => {
 });
 
 // ==========================
-// CHAT
+// CONVERSATION HISTORY
+// ==========================
+
+async function loadConversations() {
+    conversationList.innerHTML = `
+        <p class="history-loading">Loading chats...</p>
+    `;
+
+    try {
+        const data = await apiRequest("/api/conversations");
+
+        conversations = data.conversations || [];
+
+        renderConversationList();
+
+    } catch (error) {
+        conversationList.innerHTML = `
+            <p class="history-empty">
+                ${escapeHTML(error.message)}
+            </p>
+        `;
+    }
+}
+
+function renderConversationList() {
+    conversationList.innerHTML = "";
+
+    if (conversations.length === 0) {
+        conversationList.innerHTML = `
+            <p class="history-empty">No chats yet.</p>
+        `;
+        return;
+    }
+
+    conversations.forEach(item => {
+        const button = document.createElement("button");
+
+        button.className = "history-item";
+
+        if (String(item.id) === String(conversationId)) {
+            button.classList.add("active");
+        }
+
+        button.textContent = item.title || "Chat Baru";
+        button.title = item.title || "Chat Baru";
+
+        button.addEventListener("click", () => {
+            openConversation(item.id);
+        });
+
+        conversationList.appendChild(button);
+    });
+}
+
+// ==========================
+// CREATE NEW CHAT
+// ==========================
+
+async function createConversation(title = "Chat Baru") {
+    const data = await apiRequest("/api/conversations", {
+        method: "POST",
+        body: JSON.stringify({ title })
+    });
+
+    conversationId = data.conversation.id;
+    conversation = [];
+
+    await loadConversations();
+
+    renderConversation();
+
+    return conversationId;
+}
+
+async function startNewChat() {
+    if (isLoading) return;
+
+    try {
+        await createConversation("Chat Baru");
+
+        navigateTo("chat");
+        input.focus();
+
+    } catch (error) {
+        alert("Gagal membuat chat: " + error.message);
+    }
+}
+
+newChatBtn.addEventListener("click", startNewChat);
+
+// ==========================
+// OPEN OLD CHAT
+// ==========================
+
+async function openConversation(id) {
+    if (isLoading) return;
+
+    try {
+        send.disabled = true;
+
+        const data = await apiRequest(
+            `/api/messages?conversationId=${encodeURIComponent(id)}`
+        );
+
+        conversationId = id;
+
+        conversation = (data.messages || []).map(item => ({
+            role: item.role,
+            parts: [{ text: item.content }]
+        }));
+
+        renderConversation();
+        renderConversationList();
+
+        navigateTo("chat");
+
+    } catch (error) {
+        alert("Gagal membuka chat: " + error.message);
+
+    } finally {
+        send.disabled = false;
+    }
+}
+
+// ==========================
+// RENDER CHAT
 // ==========================
 
 function renderConversation() {
@@ -89,26 +243,31 @@ function renderConversation() {
         const suggestions = document.createElement("div");
         suggestions.className = "suggestions";
 
-        suggestions.innerHTML = `
-            <button onclick="quickMessage('Ceritakan tentang dirimu')">
-                ✦ About NEX AI
-            </button>
+        const options = [
+            ["✦ About NEX AI", "Ceritakan tentang dirimu"],
+            ["⌘ What can you do?", "Apa yang bisa kamu lakukan?"],
+            ["✦ Project ideas", "Bantu saya membuat ide project"]
+        ];
 
-            <button onclick="quickMessage('Apa yang bisa kamu lakukan?')">
-                ⌘ What can you do?
-            </button>
+        options.forEach(([label, message]) => {
+            const button = document.createElement("button");
+            button.textContent = label;
 
-            <button onclick="quickMessage('Bantu saya membuat ide project')">
-                ✦ Project ideas
-            </button>
-        `;
+            button.addEventListener("click", () => {
+                quickMessage(message);
+            });
+
+            suggestions.appendChild(button);
+        });
 
         chat.appendChild(suggestions);
         return;
     }
 
     conversation.forEach(item => {
-        const text = item.parts?.map(part => part.text || "").join("\n");
+        const text = item.parts
+            ?.map(part => part.text || "")
+            .join("\n");
 
         if (!text) return;
 
@@ -118,96 +277,113 @@ function renderConversation() {
             item.role === "user" ? "user" : "ai"
         );
     });
+
+    chat.scrollTop = chat.scrollHeight;
 }
+
+// ==========================
+// SEND MESSAGE
+// ==========================
 
 async function sendMessage() {
     const message = input.value.trim();
 
-    if (!message || send.disabled) return;
+    if (!message || isLoading) return;
+
+    isLoading = true;
+    send.disabled = true;
 
     document.querySelector(".suggestions")?.remove();
 
     addMessage("YOU", message, "user");
 
     input.value = "";
-    send.disabled = true;
 
     const loading = document.createElement("div");
     loading.className = "message ai";
 
-    loading.innerHTML = `
-        <strong>NEX AI</strong>
-        <p>Thinking...</p>
-    `;
+    const loadingTitle = document.createElement("strong");
+    loadingTitle.textContent = "NEX AI";
 
+    const loadingText = document.createElement("p");
+    loadingText.textContent = "Thinking...";
+
+    loading.append(loadingTitle, loadingText);
     chat.appendChild(loading);
+
     chat.scrollTop = chat.scrollHeight;
 
     try {
-        const response = await fetch("/api/chat", {
+        // Buat chat otomatis jika belum ada
+        if (!conversationId) {
+            await createConversation(message.slice(0, 45));
+        }
+
+        // Simpan riwayat lama untuk dikirim ke Gemini
+        const previousHistory = [...conversation];
+
+        // Simpan pesan pengguna ke Neon
+        await apiRequest("/api/messages", {
             method: "POST",
-            headers: {
-                "Content-Type": "application/json"
-            },
             body: JSON.stringify({
-                message,
-                history: conversation
+                conversationId,
+                role: "user",
+                content: message
             })
         });
 
-        const text = await response.text();
-
-        let data;
-
-        try {
-            data = JSON.parse(text);
-        } catch {
-            throw new Error(`Server error (${response.status})`);
-        }
-
-        if (!response.ok) {
-            throw new Error(
-                data?.details?.error?.message ||
-                data?.message ||
-                data?.error ||
-                "Request gagal"
-            );
-        }
-
-        if (!data.reply) {
-            throw new Error("Jawaban AI kosong.");
-        }
-
-        loading.innerHTML = `
-            <strong>NEX AI</strong>
-            <p>${escapeHTML(data.reply)}</p>
-        `;
-
+        // Masukkan pesan pengguna ke riwayat lokal sementara
         conversation.push({
             role: "user",
             parts: [{ text: message }]
         });
 
+        // Kirim ke Gemini melalui API lama
+        const data = await apiRequest("/api/chat", {
+            method: "POST",
+            body: JSON.stringify({
+                message,
+                history: previousHistory
+            })
+        });
+
+        if (!data.reply) {
+            throw new Error("Jawaban AI kosong.");
+        }
+
+        // Simpan jawaban Gemini ke Neon
+        await apiRequest("/api/messages", {
+            method: "POST",
+            body: JSON.stringify({
+                conversationId,
+                role: "model",
+                content: data.reply
+            })
+        });
+
+        // Simpan jawaban ke riwayat aktif
         conversation.push({
             role: "model",
             parts: [{ text: data.reply }]
         });
 
-        localStorage.setItem(
-            "nexConversation",
-            JSON.stringify(conversation)
-        );
+        loadingText.textContent = data.reply;
+
+        await loadConversations();
 
     } catch (error) {
-        loading.innerHTML = `
-            <strong>NEX AI ERROR</strong>
-            <p>${escapeHTML(error.message)}</p>
-        `;
-    }
+        loadingText.textContent = error.message;
+        loadingTitle.textContent = "NEX AI ERROR";
 
-    send.disabled = false;
-    input.focus();
-    chat.scrollTop = chat.scrollHeight;
+        console.error("Chat error:", error);
+
+    } finally {
+        isLoading = false;
+        send.disabled = false;
+
+        input.focus();
+        chat.scrollTop = chat.scrollHeight;
+    }
 }
 
 function addMessage(name, text, type) {
@@ -236,6 +412,8 @@ function escapeHTML(text) {
     return div.innerHTML;
 }
 
+window.quickMessage = quickMessage;
+
 send.addEventListener("click", sendMessage);
 
 input.addEventListener("keydown", event => {
@@ -246,6 +424,7 @@ input.addEventListener("keydown", event => {
 
 // ==========================
 // PROJECT MANAGER
+// Sementara masih LocalStorage
 // ==========================
 
 let projects = [];
@@ -256,6 +435,7 @@ try {
     );
 
     if (!Array.isArray(projects)) projects = [];
+
 } catch {
     projects = [];
 }
@@ -294,7 +474,8 @@ function renderProjects() {
         title.textContent = project.name;
 
         const description = document.createElement("p");
-        description.textContent = project.description || "No description";
+        description.textContent =
+            project.description || "No description";
 
         const date = document.createElement("small");
         date.textContent = project.date;
@@ -345,26 +526,49 @@ addProjectBtn.addEventListener("click", () => {
 // SETTINGS
 // ==========================
 
-document.getElementById("clearChatBtn").addEventListener("click", () => {
+document.getElementById("clearChatBtn").addEventListener("click", async () => {
+    if (!conversationId) {
+        alert("Belum ada percakapan yang dipilih.");
+        return;
+    }
+
     const confirmed = confirm(
-        "Apakah kamu yakin ingin menghapus seluruh percakapan NEX AI?"
+        "Hapus percakapan yang sedang dipilih beserta seluruh pesannya?"
     );
 
     if (!confirmed) return;
 
-    conversation = [];
+    try {
+        await apiRequest(
+            `/api/conversations?id=${encodeURIComponent(conversationId)}`,
+            { method: "DELETE" }
+        );
 
-    localStorage.removeItem("nexConversation");
+        conversationId = null;
+        conversation = [];
 
-    renderConversation();
+        await loadConversations();
 
-    alert("Percakapan berhasil dihapus.");
+        renderConversation();
+
+        alert("Percakapan berhasil dihapus.");
+
+    } catch (error) {
+        alert("Gagal menghapus chat: " + error.message);
+    }
 });
 
 // ==========================
 // INITIALIZATION
 // ==========================
 
-renderConversation();
-renderProjects();
-navigateTo("home");
+async function initialize() {
+    renderConversation();
+    renderProjects();
+
+    navigateTo("home");
+
+    await loadConversations();
+}
+
+initialize();
