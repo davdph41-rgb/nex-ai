@@ -1,7 +1,13 @@
-
 const input = document.getElementById("messageInput");
 const send = document.getElementById("sendBtn");
 const chat = document.getElementById("chatMessages");
+const imageInput = document.getElementById("imageInput");
+const attachImageBtn = document.getElementById("attachImageBtn");
+const imagePreview = document.getElementById("imagePreview");
+const imagePreviewImg = document.getElementById("imagePreviewImg");
+const imagePreviewName = document.getElementById("imagePreviewName");
+const removeImageBtn = document.getElementById("removeImageBtn");
+let pendingImage = null;
 
 const newChatBtn = document.getElementById("newChatBtn");
 const conversationList = document.getElementById("conversationList");
@@ -283,11 +289,7 @@ function renderConversation() {
         options.forEach(([label, message]) => {
             const button = document.createElement("button");
             button.textContent = label;
-
-            button.addEventListener("click", () => {
-                quickMessage(message);
-            });
-
+            button.addEventListener("click", () => quickMessage(message));
             suggestions.appendChild(button);
         });
 
@@ -296,12 +298,8 @@ function renderConversation() {
     }
 
     conversation.forEach(item => {
-        const text = item.parts
-            ?.map(part => part.text || "")
-            .join("\n");
-
+        const text = item.parts?.map(part => part.text || "").join("\n");
         if (!text) return;
-
         addMessage(
             item.role === "user" ? "YOU" : "NEX AI",
             text,
@@ -318,84 +316,78 @@ function renderConversation() {
 
 async function sendMessage() {
     const message = input.value.trim();
+    const imageToSend = pendingImage;
 
-    if (!message || isLoading) return;
+    if ((!message && !imageToSend) || isLoading) return;
 
     isLoading = true;
     send.disabled = true;
-
+    attachImageBtn.disabled = true;
     document.querySelector(".suggestions")?.remove();
 
-    addMessage("YOU", message, "user");
-
+    const visibleUserText = message || "Tolong analisis foto ini.";
+    addMessage("YOU", visibleUserText, "user", imageToSend?.preview || null);
     input.value = "";
+    autoResizeInput();
+    clearPendingImage();
 
     const loading = document.createElement("div");
     loading.className = "message ai";
-
     const loadingTitle = document.createElement("strong");
     loadingTitle.textContent = "NEX AI";
-
     const loadingText = document.createElement("p");
-    loadingText.textContent = "Thinking...";
-
+    loadingText.textContent = imageToSend ? "Menganalisis foto..." : "Thinking...";
     loading.append(loadingTitle, loadingText);
     chat.appendChild(loading);
-
     chat.scrollTop = chat.scrollHeight;
 
     try {
-        // Buat chat otomatis jika belum ada
-        if (!conversationId) {
-            await createConversation("Chat Baru");
-        }
+        if (!conversationId) await createConversation("Chat Baru");
 
-        // Periksa apakah ini pesan pertama
         const isFirstMessage = conversation.length === 0;
-
-        // Simpan riwayat lama untuk Gemini
         const previousHistory = [...conversation];
+        const storedUserText = imageToSend
+            ? `${visibleUserText}\n[Foto dilampirkan — file foto tidak disimpan di riwayat]`
+            : message;
 
-        // Simpan pesan pengguna ke Neon
         await apiRequest("/api/messages", {
             method: "POST",
             body: JSON.stringify({
                 conversationId,
                 role: "user",
-                content: message
+                content: storedUserText
             })
         });
 
-        // Perbarui judul jika pesan pertama
         if (isFirstMessage) {
-            await updateConversationTitle(
-                conversationId,
-                message
-            );
-
+            await updateConversationTitle(conversationId, visibleUserText);
             await loadConversations();
         }
 
-        // Masukkan pesan pengguna ke riwayat
         conversation.push({
             role: "user",
-            parts: [{ text: message }]
+            parts: [{ text: storedUserText }]
         });
 
-        // Kirim ke Gemini
-        const data = await apiRequest("/api/chat", {
-            method: "POST",
-            body: JSON.stringify({
-                message,
-                history: previousHistory
-            })
-        });
+        const requestBody = {
+            message: visibleUserText,
+            history: previousHistory
+        };
 
-        if (!data.reply) {
-            throw new Error("Jawaban AI kosong.");
+        if (imageToSend) {
+            requestBody.image = {
+                mimeType: imageToSend.mimeType,
+                data: imageToSend.data
+            };
         }
 
-        // Simpan jawaban Gemini ke Neon
+        const data = await apiRequest("/api/chat", {
+            method: "POST",
+            body: JSON.stringify(requestBody)
+        });
+
+        if (!data.reply) throw new Error("Jawaban AI kosong.");
+
         await apiRequest("/api/messages", {
             method: "POST",
             body: JSON.stringify({
@@ -405,26 +397,23 @@ async function sendMessage() {
             })
         });
 
-        // Masukkan jawaban ke riwayat
         conversation.push({
             role: "model",
             parts: [{ text: data.reply }]
         });
 
-        loadingText.textContent = data.reply;
-
+        loading.remove();
+        addMessage("NEX AI", data.reply, "ai");
         await loadConversations();
 
     } catch (error) {
         loadingText.textContent = error.message;
         loadingTitle.textContent = "NEX AI ERROR";
-
         console.error("Chat error:", error);
-
     } finally {
         isLoading = false;
         send.disabled = false;
-
+        attachImageBtn.disabled = false;
         input.focus();
         chat.scrollTop = chat.scrollHeight;
     }
@@ -434,19 +423,113 @@ async function sendMessage() {
 // MESSAGE FUNCTIONS
 // ==========================
 
-function addMessage(name, text, type) {
+function addMessage(name, text, type, imageUrl = null) {
     const message = document.createElement("div");
-
     message.className = `message ${type}`;
 
     const strong = document.createElement("strong");
     strong.textContent = name;
+    message.appendChild(strong);
 
-    const paragraph = document.createElement("p");
-    paragraph.textContent = text;
+    if (imageUrl) {
+        const image = document.createElement("img");
+        image.className = "message-image";
+        image.src = imageUrl;
+        image.alt = "Foto yang dikirim";
+        message.appendChild(image);
+    }
 
-    message.append(strong, paragraph);
+    if (type === "ai") {
+        const content = document.createElement("div");
+        content.className = "markdown-body";
+        content.innerHTML = renderMarkdown(text);
+        message.appendChild(content);
+        addCodeCopyButtons(content);
+    } else {
+        const paragraph = document.createElement("p");
+        paragraph.className = "user-message-text";
+        paragraph.textContent = text;
+        message.appendChild(paragraph);
+    }
+
     chat.appendChild(message);
+    chat.scrollTop = chat.scrollHeight;
+    return message;
+}
+
+function renderMarkdown(text) {
+    const source = String(text ?? "");
+
+    if (!window.marked || !window.DOMPurify) {
+        return `<p>${escapeHTML(source).replace(/\n/g, "<br>")}</p>`;
+    }
+
+    marked.setOptions({
+        gfm: true,
+        breaks: true,
+        highlight: undefined
+    });
+
+    const rawHTML = marked.parse(source);
+    return DOMPurify.sanitize(rawHTML, {
+        USE_PROFILES: { html: true }
+    });
+}
+
+function addCodeCopyButtons(container) {
+    container.querySelectorAll("pre").forEach(pre => {
+        if (pre.parentElement.classList.contains("code-block")) return;
+
+        const wrapper = document.createElement("div");
+        wrapper.className = "code-block";
+        pre.parentNode.insertBefore(wrapper, pre);
+        wrapper.appendChild(pre);
+
+        const code = pre.querySelector("code");
+        const languageClass = [...(code?.classList || [])]
+            .find(className => className.startsWith("language-"));
+        const language = languageClass
+            ? languageClass.replace("language-", "")
+            : "CODE";
+
+        const toolbar = document.createElement("div");
+        toolbar.className = "code-toolbar";
+
+        const label = document.createElement("span");
+        label.textContent = language.toUpperCase();
+
+        const copyButton = document.createElement("button");
+        copyButton.type = "button";
+        copyButton.className = "copy-code-btn";
+        copyButton.textContent = "Salin kode";
+        copyButton.addEventListener("click", async () => {
+            const codeText = code?.textContent || "";
+            try {
+                await navigator.clipboard.writeText(codeText);
+                copyButton.textContent = "Tersalin ✓";
+            } catch {
+                const temp = document.createElement("textarea");
+                temp.value = codeText;
+                document.body.appendChild(temp);
+                temp.select();
+                document.execCommand("copy");
+                temp.remove();
+                copyButton.textContent = "Tersalin ✓";
+            }
+            setTimeout(() => { copyButton.textContent = "Salin kode"; }, 1800);
+        });
+
+        toolbar.append(label, copyButton);
+        wrapper.insertBefore(toolbar, pre);
+
+        if (window.hljs && code) {
+            try {
+                window.hljs.highlightElement(code);
+            } catch (error) {
+                console.warn("Syntax highlight:", error);
+            }
+        }
+    });
 }
 
 function quickMessage(message) {
@@ -465,10 +548,96 @@ window.quickMessage = quickMessage;
 send.addEventListener("click", sendMessage);
 
 input.addEventListener("keydown", event => {
-    if (event.key === "Enter") {
+    if (event.key === "Enter" && !event.shiftKey) {
+        event.preventDefault();
         sendMessage();
     }
 });
+
+function autoResizeInput() {
+    input.style.height = "auto";
+    input.style.height = `${Math.min(input.scrollHeight, 140)}px`;
+}
+
+input.addEventListener("input", autoResizeInput);
+
+function clearPendingImage() {
+    pendingImage = null;
+    imageInput.value = "";
+    imagePreview.hidden = true;
+    imagePreviewImg.removeAttribute("src");
+    imagePreviewName.textContent = "Foto terpilih";
+}
+
+attachImageBtn.addEventListener("click", () => {
+    if (!isLoading) imageInput.click();
+});
+
+removeImageBtn.addEventListener("click", clearPendingImage);
+
+imageInput.addEventListener("change", async () => {
+    const file = imageInput.files?.[0];
+    if (!file) return;
+
+    if (!file.type.startsWith("image/")) {
+        alert("Pilih file gambar yang valid.");
+        clearPendingImage();
+        return;
+    }
+
+    try {
+        const processed = await compressImage(file);
+        pendingImage = processed;
+        imagePreviewImg.src = processed.preview;
+        imagePreviewName.textContent = file.name;
+        imagePreview.hidden = false;
+    } catch (error) {
+        alert("Foto tidak dapat dibaca: " + error.message);
+        clearPendingImage();
+    }
+});
+
+function compressImage(file) {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onerror = () => reject(new Error("Gagal membaca file."));
+        reader.onload = () => {
+            const image = new Image();
+            image.onerror = () => reject(new Error("Format foto tidak didukung."));
+            image.onload = () => {
+                const maxSide = 1600;
+                const scale = Math.min(1, maxSide / Math.max(image.width, image.height));
+                const canvas = document.createElement("canvas");
+                canvas.width = Math.max(1, Math.round(image.width * scale));
+                canvas.height = Math.max(1, Math.round(image.height * scale));
+                const context = canvas.getContext("2d");
+                if (!context) return reject(new Error("Tidak bisa memproses foto."));
+                context.drawImage(image, 0, 0, canvas.width, canvas.height);
+
+                const outputType = file.type === "image/png" ? "image/png" : "image/jpeg";
+                canvas.toBlob(blob => {
+                    if (!blob) return reject(new Error("Gagal mengompres foto."));
+                    if (blob.size > 2.8 * 1024 * 1024) {
+                        return reject(new Error("Ukuran foto masih terlalu besar. Pilih foto lain."));
+                    }
+                    const dataReader = new FileReader();
+                    dataReader.onerror = () => reject(new Error("Gagal menyiapkan foto."));
+                    dataReader.onload = () => {
+                        const dataUrl = String(dataReader.result);
+                        resolve({
+                            mimeType: blob.type,
+                            data: dataUrl.split(",")[1],
+                            preview: dataUrl
+                        });
+                    };
+                    dataReader.readAsDataURL(blob);
+                }, outputType, 0.84);
+            };
+            image.src = reader.result;
+        };
+        reader.readAsDataURL(file);
+    });
+}
 
 // ==========================
 // PROJECT MANAGER
