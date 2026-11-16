@@ -364,3 +364,307 @@ footer{
         margin-bottom:10px;
     }
 }
+
+
+/* ==========================
+   PAGE NAVIGATION
+========================== */
+
+.page {
+    display: none;
+    width: 100%;
+    flex: 1;
+    min-height: 0;
+    flex-direction: column;
+    animation: appear .25s ease;
+}
+
+.page.active {
+    display: flex;
+}
+
+nav button.active {
+    background: #ffffff0b;
+    color: #fff;
+    border-left: 2px solid #8b4dff;
+}
+
+/* ==========================
+   DASHBOARD
+========================== */
+
+.dashboard-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 15px;
+    width: 100%;
+    max-width: 850px;
+    margin: 10px auto 30px;
+}
+
+.dashboard-card,
+.feature-card {
+    padding: 23px;
+    min-width: 0;
+    border: 1px solid #ffffff12;
+    border-radius: 17px;
+    background: #0b0b10;
+    color: #fff;
+    text-align: left;
+    transition: .2s;
+}
+
+.dashboard-card:hover,
+.feature-card:hover,
+.project-card:hover {
+    border-color: #713cff88;
+    transform: translateY(-3px);
+}
+
+.dashboard-card span,
+.feature-card > span {
+    display: block;
+    color: #a46cff;
+    font-size: 25px;
+    margin-bottom: 17px;
+}
+
+.dashboard-card strong,
+.feature-card strong {
+    display: block;
+    font-size: 16px;
+    margin-bottom: 8px;
+}
+
+.dashboard-card small,
+.feature-card p {
+    color: #777;
+    font-size: 12px;
+    line-height: 1.6;
+}
+
+/* ==========================
+   SECTION HEADING
+========================== */
+
+.section-heading {
+    margin: 35px 0 25px;
+}
+
+.section-heading h2 {
+    font-size: 28px;
+}
+
+.section-heading p {
+    color: #777;
+    margin-top: 10px;
+    font-size: 13px;
+}
+
+/* ==========================
+   FEATURE CARDS
+========================== */
+
+.feature-card {
+    display: flex;
+    flex-direction: column;
+}
+
+.feature-card p {
+    margin-bottom: 15px;
+}
+
+.feature-status {
+    color: #62d99a;
+    font-size: 10px;
+    margin-top: auto;
+    padding-top: 10px;
+}
+
+.feature-card button {
+    margin-top: auto;
+    padding: 10px;
+    background: #713cff22;
+    color: #b995ff;
+    border: 1px solid #713cff44;
+    border-radius: 9px;
+}
+
+/* ==========================
+   PROJECTS
+========================== */
+
+.project-form {
+    display: grid;
+    gap: 12px;
+    max-width: 600px;
+    margin-bottom: 25px;
+}
+
+.project-form input {
+    width: 100%;
+    padding: 14px;
+    background: #0b0b10;
+    color: #fff;
+    border: 1px solid #ffffff18;
+    border-radius: 10px;
+    outline: none;
+}
+
+.project-form input:focus {
+    border-color: #713cff;
+}
+
+.project-form button {
+    padding: 13px;
+    border: 0;
+    border-radius: 10px;
+    background: #713cff;
+    color: white;
+}
+
+.project-list {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 15px;
+}
+
+.project-card {
+    background: #0b0b10;
+    border: 1px solid #ffffff12;
+    border-radius: 15px;
+    padding: 20px;
+    transition: .2s;
+    min-width: 0;
+}
+
+.project-card strong {
+    color: #b995ff;
+}
+
+.project-card p {
+    color: #999;
+    font-size: 13px;
+    margin: 12px 0;
+    overflow-wrap: anywhere;
+}
+
+.project-card small {
+    display: block;
+    color: #555;
+    margin-bottom: 15px;
+}
+
+.empty-state {
+    text-align: center;
+    padding: 45px 15px;
+    color: #777;
+    grid-column: 1 / -1;
+}
+
+.empty-state span {
+    display: block;
+    font-size: 35px;
+    color: #8b4dff;
+    margin-bottom: 15px;
+}
+
+.empty-state p {
+    margin-top: 8px;
+    font-size: 12px;
+}
+
+/* ==========================
+   SETTINGS
+========================== */
+
+.settings-card {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 15px;
+    padding: 20px;
+    margin-bottom: 12px;
+    background: #0b0b10;
+    border: 1px solid #ffffff12;
+    border-radius: 14px;
+}
+
+.settings-card strong {
+    font-size: 14px;
+}
+
+.settings-card p {
+    color: #777;
+    font-size: 12px;
+    margin-top: 7px;
+    line-height: 1.5;
+}
+
+.setting-badge {
+    font-size: 10px;
+    color: #62d99a;
+    white-space: nowrap;
+}
+
+.danger-button {
+    padding: 9px 13px;
+    border: 1px solid #ff555544;
+    background: #ff555511;
+    color: #ff7777;
+    border-radius: 9px;
+}
+
+/* ==========================
+   CHAT PAGE
+========================== */
+
+#chat.page.active {
+    overflow: hidden;
+}
+
+#chat .chat {
+    flex: 1;
+    min-height: 150px;
+    padding: 15px 5px;
+}
+
+#chat .input {
+    flex-shrink: 0;
+}
+
+/* ==========================
+   MOBILE RESPONSIVE
+========================== */
+
+@media(max-width:700px) {
+
+    .dashboard-grid,
+    .project-list {
+        grid-template-columns: 1fr;
+    }
+
+    .dashboard-card,
+    .feature-card {
+        padding: 18px;
+    }
+
+    .settings-card {
+        align-items: flex-start;
+        flex-direction: column;
+    }
+
+    .section-heading {
+        margin-top: 30px;
+    }
+
+    #chat .chat {
+        padding: 10px 0;
+    }
+
+    .project-form {
+        width: 100%;
+    }
+
+}
+
