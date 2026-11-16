@@ -52,6 +52,49 @@ export default async function handler(req, res) {
       });
     }
 
+    // PATCH: Memperbarui judul percakapan
+    if (req.method === "PATCH") {
+      const { id, title } = req.body || {};
+
+      if (!id || !/^\d+$/.test(String(id))) {
+        return res.status(400).json({
+          success: false,
+          message: "ID percakapan tidak valid"
+        });
+      }
+
+      if (typeof title !== "string" || !title.trim()) {
+        return res.status(400).json({
+          success: false,
+          message: "Judul percakapan tidak boleh kosong"
+        });
+      }
+
+      const newTitle = title.trim().slice(0, 255);
+
+      const result = await sql`
+        UPDATE conversations
+        SET
+          title = ${newTitle},
+          updated_at = NOW()
+        WHERE id = ${id}
+        RETURNING id, title, created_at, updated_at
+      `;
+
+      if (result.length === 0) {
+        return res.status(404).json({
+          success: false,
+          message: "Percakapan tidak ditemukan"
+        });
+      }
+
+      return res.status(200).json({
+        success: true,
+        message: "Judul percakapan berhasil diperbarui",
+        conversation: result[0]
+      });
+    }
+
     // DELETE: Menghapus percakapan
     if (req.method === "DELETE") {
       const id = req.query.id;
