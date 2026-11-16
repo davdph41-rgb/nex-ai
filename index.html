@@ -73,39 +73,51 @@
 </section>
 
 <!-- AI CHAT -->
+
+<!-- AI CHAT -->
 <section class="page" id="chat">
 
-    <div class="chat" id="chatMessages">
+    <div class="chat-layout">
 
-        <div class="message ai">
-            <strong>NEX AI</strong>
-            <p>Halo! 👋 Aku NEX AI. Ada yang ingin kamu kerjakan?</p>
+        <!-- CHAT HISTORY -->
+        <div class="chat-sidebar">
+
+            <button id="newChatBtn" class="new-chat-btn">
+                + New Chat
+            </button>
+
+            <div class="history-heading">
+                CHAT HISTORY
+            </div>
+
+            <div id="conversationList" class="conversation-list">
+                <p class="history-loading">Loading chats...</p>
+            </div>
+
         </div>
 
-        <div class="suggestions">
-            <button onclick="quickMessage('Ceritakan tentang dirimu')">
-                ✦ About NEX AI
-            </button>
+        <!-- CHAT CONTENT -->
+        <div class="chat-main">
 
-            <button onclick="quickMessage('Apa yang bisa kamu lakukan?')">
-                ⌘ What can you do?
-            </button>
+            <div class="chat" id="chatMessages">
+                <div class="message ai">
+                    <strong>NEX AI</strong>
+                    <p>Halo! 👋 Aku NEX AI. Ada yang ingin kamu kerjakan?</p>
+                </div>
+            </div>
 
-            <button onclick="quickMessage('Bantu saya membuat ide project')">
-                ✦ Project ideas
-            </button>
+            <div class="input">
+                <input
+                    id="messageInput"
+                    type="text"
+                    placeholder="Ask NEX anything..."
+                    autocomplete="off"
+                >
+                <button id="sendBtn">➤</button>
+            </div>
+
         </div>
 
-    </div>
-
-    <div class="input">
-        <input
-            id="messageInput"
-            type="text"
-            placeholder="Ask NEX anything..."
-            autocomplete="off"
-        >
-        <button id="sendBtn">➤</button>
     </div>
 
 </section>
