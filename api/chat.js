@@ -1,4 +1,3 @@
-
 import {
     toolDeclarations,
     executeTool
@@ -15,7 +14,7 @@ export default async function handler(req, res) {
     }
 
     try {
-        const { message, history = [] } = req.body || {};
+        const { message, history = [], image = null } = req.body || {};
         const key = process.env.GEMINI_API_KEY;
 
         if (!message || typeof message !== "string") {
@@ -34,6 +33,21 @@ export default async function handler(req, res) {
             return res.status(400).json({
                 error: "History tidak valid"
             });
+        }
+
+        // Validasi lampiran foto. Data gambar tidak disimpan ke Neon.
+        if (image !== null) {
+            if (
+                typeof image !== "object" ||
+                !["image/jpeg", "image/png", "image/webp"].includes(image.mimeType) ||
+                typeof image.data !== "string" ||
+                !image.data.length ||
+                image.data.length > 4 * 1024 * 1024
+            ) {
+                return res.status(400).json({
+                    error: "Foto tidak valid atau terlalu besar. Coba pilih foto yang lebih kecil."
+                });
+            }
         }
 
         const model = "gemini-3.5-flash-lite";
@@ -78,6 +92,8 @@ export default async function handler(req, res) {
                     "Gunakan get_weather untuk informasi cuaca terkini. " +
 
                     "Gunakan search_github untuk mencari repositori GitHub. " +
+
+                    "Jika pengguna mengirim gambar, analisis isi gambar secara visual dan jawab pertanyaan pengguna berdasarkan gambar tersebut. Jika detail tidak jelas, katakan dengan jujur. " +
 
                     "Jangan mengarang hasil dari tool. " +
 
@@ -148,11 +164,22 @@ export default async function handler(req, res) {
         // CONVERSATION HISTORY
         // ==========================
 
+        const currentParts = [{ text: message || "Tolong analisis foto ini." }];
+
+        if (image) {
+            currentParts.push({
+                inlineData: {
+                    mimeType: image.mimeType,
+                    data: image.data
+                }
+            });
+        }
+
         let contents = [
             ...history,
             {
                 role: "user",
-                parts: [{ text: message }]
+                parts: currentParts
             }
         ];
 
