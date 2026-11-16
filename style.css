@@ -668,3 +668,129 @@ nav button.active {
 
 }
 
+
+/* ==========================
+   NEON CHAT HISTORY
+========================== */
+
+.chat-layout {
+    display: flex;
+    gap: 15px;
+    height: 100%;
+    min-height: 450px;
+}
+
+.chat-sidebar {
+    width: 220px;
+    min-width: 180px;
+    background: #0c0c12;
+    border: 1px solid #242431;
+    border-radius: 14px;
+    padding: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    overflow: hidden;
+}
+
+.new-chat-btn {
+    width: 100%;
+    padding: 11px;
+    border: 1px solid #5545a8;
+    border-radius: 9px;
+    background: #211b3b;
+    color: white;
+    font-weight: bold;
+}
+
+.history-heading {
+    color: #77778b;
+    font-size: 10px;
+    letter-spacing: 1.5px;
+    padding: 5px 3px;
+}
+
+.conversation-list {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    overflow-y: auto;
+}
+
+.history-item {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid transparent;
+    border-radius: 8px;
+    background: transparent;
+    color: #aaaabb;
+    text-align: left;
+    cursor: pointer;
+    font-size: 12px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.history-item:hover {
+    background: #191925;
+    color: white;
+}
+
+.history-item.active {
+    background: #211b3b;
+    border-color: #5545a8;
+    color: white;
+}
+
+.history-loading,
+.history-empty {
+    color: #77778b;
+    font-size: 12px;
+    padding: 8px 3px;
+}
+
+.chat-main {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.chat-main .chat {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+}
+
+.chat-main .input {
+    flex-shrink: 0;
+}
+
+@media (max-width: 650px) {
+    .chat-layout {
+        gap: 8px;
+    }
+
+    .chat-sidebar {
+        width: 115px;
+        min-width: 115px;
+        padding: 7px;
+    }
+
+    .new-chat-btn {
+        font-size: 11px;
+        padding: 9px 4px;
+    }
+
+    .history-item {
+        font-size: 10px;
+        padding: 8px 5px;
+    }
+
+    .history-heading {
+        font-size: 9px;
+    }
+}
+
