@@ -12,17 +12,26 @@ export default async function handler(req, res) {
   const sql = neon(process.env.DATABASE_URL);
 
   try {
-    // GET: Mengambil daftar percakapan
+    // GET: Mengambil daftar percakapan dan mendukung pencarian.
     if (req.method === "GET") {
-      const conversations = await sql`
-        SELECT
-          id,
-          title,
-          created_at,
-          updated_at
-        FROM conversations
-        ORDER BY updated_at DESC
-      `;
+      const query = typeof req.query.q === "string" ? req.query.q.trim().slice(0, 100) : "";
+      const conversations = query
+        ? await sql`
+            SELECT c.id, c.title, c.created_at, c.updated_at
+            FROM conversations c
+            WHERE c.title ILIKE ${"%" + query + "%"}
+               OR EXISTS (
+                 SELECT 1 FROM messages m
+                 WHERE m.conversation_id = c.id
+                   AND m.content ILIKE ${"%" + query + "%"}
+               )
+            ORDER BY c.updated_at DESC
+          `
+        : await sql`
+            SELECT id, title, created_at, updated_at
+            FROM conversations
+            ORDER BY updated_at DESC
+          `;
 
       return res.status(200).json({
         success: true,
@@ -31,7 +40,7 @@ export default async function handler(req, res) {
       });
     }
 
-    // POST: Membuat percakapan baru
+    // POST: Membuat percakapan baru.
     if (req.method === "POST") {
       const title =
         typeof req.body?.title === "string" &&
@@ -52,7 +61,7 @@ export default async function handler(req, res) {
       });
     }
 
-    // PATCH: Memperbarui judul percakapan
+    // PATCH: Memperbarui judul percakapan.
     if (req.method === "PATCH") {
       const { id, title } = req.body || {};
 
@@ -95,7 +104,7 @@ export default async function handler(req, res) {
       });
     }
 
-    // DELETE: Menghapus percakapan
+    // DELETE: Menghapus percakapan.
     if (req.method === "DELETE") {
       const id = req.query.id;
 
