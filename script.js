@@ -147,7 +147,7 @@ function navigateTo(pageName) {
         pageTitles[pageName] || "NEX AI";
 
     if (pageName === "projects") renderProjects();
-    if (pageName === "stock") loadStockProducts();
+    if (pageName === "stock") { loadStockProducts(); loadStockInventory(); }
 
     if (pageName === "chat") {
         input.focus();
@@ -1533,3 +1533,126 @@ stockProductSearch?.addEventListener("input", () => {
     clearTimeout(stockSearchDebounce);
     stockSearchDebounce = setTimeout(loadStockProducts, 250);
 });
+
+
+// ==========================
+// STOCK INVENTORY - STAGE 3
+// ==========================
+
+const stockInventoryDate = document.getElementById("stockInventoryDate");
+const stockInventoryForm = document.getElementById("stockInventoryForm");
+const stockInventoryList = document.getElementById("stockInventoryList");
+const stockInventorySaveBtn = document.getElementById("stockInventorySaveBtn");
+
+function getJakartaBusinessDate() {
+    return new Intl.DateTimeFormat("en-CA", {
+        timeZone: "Asia/Jakarta",
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit"
+    }).format(new Date());
+}
+
+function renderStockInventory(items) {
+    if (!stockInventoryList) return;
+
+    if (!items?.length) {
+        stockInventoryList.innerHTML = '<div class="stock-empty">Belum ada produk aktif. Tambahkan produk terlebih dahulu.</div>';
+        return;
+    }
+
+    stockInventoryList.innerHTML = `
+        <div class="stock-inventory-row stock-inventory-header">
+            <span>Produk</span><span>Satuan</span><span>Stok awal</span>
+        </div>
+        ${items.map(item => `
+            <label class="stock-inventory-row">
+                <span class="stock-inventory-product">
+                    <strong>${escapeHTML(item.name)}</strong>
+                    <small>${escapeHTML(item.code)}</small>
+                </span>
+                <span class="stock-inventory-unit">${escapeHTML(item.unit)}</span>
+                <input
+                    class="stock-inventory-quantity"
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    inputmode="decimal"
+                    required
+                    data-product-id="${item.product_id}"
+                    value="${item.opening_stock === null ? "" : escapeHTML(String(item.opening_stock))}"
+                    placeholder="Masukkan jumlah"
+                    aria-label="Stok awal ${escapeHTML(item.name)}"
+                >
+            </label>
+        `).join("")}
+    `;
+}
+
+async function loadStockInventory() {
+    if (!stockInventoryDate || !stockInventoryList) return;
+
+    const businessDate = stockInventoryDate.value || getJakartaBusinessDate();
+    stockInventoryList.innerHTML = '<div class="stock-empty">Memuat stok awal dari Neon...</div>';
+    stockSetMessage("stockInventoryMessage", "");
+
+    try {
+        const data = await stockApi(`/api/stock/inventory?date=${encodeURIComponent(businessDate)}`);
+        renderStockInventory(data.items || []);
+        stockSetMessage(
+            "stockInventoryMessage",
+            data.initialized
+                ? `Stok awal untuk ${businessDate} sudah tersimpan.`
+                : `Belum ada stok awal untuk ${businessDate}. Isi seluruh produk lalu simpan.`
+        );
+    } catch (error) {
+        stockInventoryList.innerHTML = `<div class="stock-empty stock-error">${escapeHTML(error.message)}</div>`;
+        stockSetMessage("stockInventoryMessage", error.message, true);
+    }
+}
+
+stockInventoryDate?.addEventListener("change", loadStockInventory);
+
+stockInventoryForm?.addEventListener("submit", async event => {
+    event.preventDefault();
+
+    const inputs = [...stockInventoryList.querySelectorAll("[data-product-id]")];
+    if (!inputs.length) return;
+
+    const items = inputs.map(input => ({
+        product_id: input.dataset.productId,
+        opening_stock: input.value
+    }));
+
+    if (items.some(item => item.opening_stock === "" ||
+        !Number.isFinite(Number(item.opening_stock)) || Number(item.opening_stock) < 0)) {
+        stockSetMessage("stockInventoryMessage", "Isi stok awal semua produk dengan angka 0 atau lebih.", true);
+        return;
+    }
+
+    const businessDate = stockInventoryDate.value;
+    if (!businessDate) {
+        stockSetMessage("stockInventoryMessage", "Pilih tanggal operasional terlebih dahulu.", true);
+        return;
+    }
+
+    stockInventorySaveBtn.disabled = true;
+    stockSetMessage("stockInventoryMessage", "Menyimpan stok awal ke Neon...");
+
+    try {
+        const result = await stockApi("/api/stock/inventory", {
+            method: "POST",
+            body: JSON.stringify({ business_date: businessDate, items })
+        });
+        stockSetMessage("stockInventoryMessage", result.message || "Stok awal berhasil disimpan.");
+        await loadStockInventory();
+    } catch (error) {
+        stockSetMessage("stockInventoryMessage", error.message, true);
+    } finally {
+        stockInventorySaveBtn.disabled = false;
+    }
+});
+
+if (stockInventoryDate) {
+    stockInventoryDate.value = getJakartaBusinessDate();
+}

@@ -147,6 +147,29 @@
         <button type="button" id="stockRefreshBtn" class="stock-secondary-btn">↻ Refresh</button>
     </div>
 
+    <div class="stock-panel stock-inventory-panel">
+        <div class="stock-panel-heading">
+            <div>
+                <h3>Stok Awal Harian</h3>
+                <p>Masukkan jumlah stok awal untuk setiap produk pada tanggal operasional yang dipilih.</p>
+            </div>
+            <div class="stock-inventory-date">
+                <label for="stockInventoryDate">Tanggal operasional</label>
+                <input type="date" id="stockInventoryDate" required>
+            </div>
+        </div>
+        <form id="stockInventoryForm">
+            <div id="stockInventoryList" class="stock-inventory-list">
+                <div class="stock-empty">Memuat data inventaris...</div>
+            </div>
+            <div class="stock-inventory-footer">
+                <p class="stock-inventory-note">Menyimpan ulang tanggal yang sama akan memperbarui stok awal, bukan membuat catatan ganda.</p>
+                <button type="submit" id="stockInventorySaveBtn" class="stock-primary-btn">Simpan Stok Awal</button>
+            </div>
+        </form>
+        <p id="stockInventoryMessage" class="stock-message" aria-live="polite"></p>
+    </div>
+
     <div class="stock-summary-grid">
         <div class="stock-summary-card"><small>Total Produk</small><strong id="stockProductTotal">—</strong><span>Data master produk</span></div>
         <div class="stock-summary-card"><small>Produk Aktif</small><strong id="stockActiveTotal">—</strong><span>Siap digunakan</span></div>
