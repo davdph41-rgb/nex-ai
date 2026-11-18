@@ -15,7 +15,14 @@ export default async function handler(req, res) {
     }
 
     try {
-        const { message, history = [], image = null, preferences = {}, projectContext = "" } = req.body || {};
+        const {
+            message,
+            history = [],
+            image = null,
+            preferences = {},
+            projectContext = "",
+            model: requestedModel
+        } = req.body || {};
         const key = process.env.GEMINI_API_KEY;
 
         if (!message || typeof message !== "string") {
@@ -51,7 +58,25 @@ export default async function handler(req, res) {
             }
         }
 
-        const model = "gemini-3.5-flash-lite";
+        // Hanya izinkan model yang sudah ditentukan aplikasi.
+        // Model default tetap digunakan jika pilihan tidak dikenal/kosong.
+        const allowedModels = new Set([
+            "gemini-4-argon",
+            "gemini-4-carbon",
+            "gemini-4-hydrogen",
+            "gemini-3.8-flash",
+            "gemini-3.7-flash",
+            "gemini-3.6-flash",
+            "gemini-3.5-flash",
+            "gemini-3.5-flash-lite",
+            "gemini-3.1-flash-lite",
+            "gemini-3.1-pro-preview"
+        ]);
+
+        const DEFAULT_MODEL = "gemini-3.5-flash-lite";
+        const model = allowedModels.has(requestedModel)
+            ? requestedModel
+            : DEFAULT_MODEL;
 
         const apiURL =
             `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`;
