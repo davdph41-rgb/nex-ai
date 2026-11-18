@@ -229,16 +229,14 @@
             <label for="geminiModelSelect">Model aktif</label>
             <select id="geminiModelSelect" aria-describedby="geminiModelDescription">
                 <optgroup label="Gemini 4 — Frontier">
-                    <option value="gemini-4-argon">Gemini 4 Argon</option>
                     <option value="gemini-4-carbon">Gemini 4 Carbon</option>
+                    <option value="gemini-4-argon">Gemini 4 Argon</option>
                     <option value="gemini-4-hydrogen">Gemini 4 Hydrogen</option>
                 </optgroup>
                 <optgroup label="Gemini 3 — Flash">
                     <option value="gemini-3.8-flash">Gemini 3.8 Flash</option>
-                    <option value="gemini-3.7-flash">Gemini 3.7 Flash</option>
                     <option value="gemini-3.6-flash">Gemini 3.6 Flash</option>
-                    <option value="gemini-3.5-flash">Gemini 3.5 Flash</option>
-                    <option value="gemini-3.5-flash-lite">Gemini 3.5 Flash-Lite</option>
+                    <option value="gemini-3.5-flash-lite">Gemini 3.5 Flash-Lite (Default)</option>
                     <option value="gemini-3.1-flash-lite">Gemini 3.1 Flash-Lite</option>
                 </optgroup>
                 <optgroup label="Gemini 3 — Pro">
@@ -246,7 +244,7 @@
                 </optgroup>
             </select>
             <span id="geminiModelStatus" class="setting-badge" aria-live="polite">Model aktif</span>
-            <p id="geminiModelDescription" class="model-note">Model Gemini 4 Argon dan Carbon memerlukan billing aktif. Ketersediaan model bergantung pada akses API akunmu.</p>
+            <p id="geminiModelDescription" class="model-note">Pilih model Gemini yang tersedia. Model yang dipilih digunakan untuk chat dan pemanggilan Tools; akses dan kuota mengikuti akun Google AI API.</p>
         </div>
     </div>
 
