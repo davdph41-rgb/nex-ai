@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="id">
 <head>
@@ -82,8 +83,13 @@
                 + New Chat
             </button>
 
-            <div class="history-heading">
-                CHAT HISTORY
+            <div class="history-heading">CHAT HISTORY</div>
+            <input id="historySearch" class="history-search" type="search" placeholder="Cari percakapan..." aria-label="Cari riwayat chat">
+            <div class="chat-tools-row">
+                <button id="exportChatBtn" type="button" class="mini-tool-btn" title="Ekspor percakapan">⇩ Export</button>
+                <select id="workspaceSelect" class="workspace-select" aria-label="Pilih workspace">
+                    <option value="">Umum</option>
+                </select>
             </div>
 
             <div id="conversationList" class="conversation-list">
@@ -112,6 +118,7 @@
                 <div class="input">
                     <input id="imageInput" type="file" accept="image/*" hidden>
                     <button type="button" id="attachImageBtn" class="attach-btn" title="Tambah foto" aria-label="Tambah foto">＋</button>
+                    <button type="button" id="voiceInputBtn" class="attach-btn voice-btn" title="Dikte dengan suara" aria-label="Dikte dengan suara">🎙</button>
                     <textarea
                         id="messageInput"
                         rows="1"
@@ -210,7 +217,20 @@
             <strong>Conversation Storage</strong>
             <p>Your conversations are stored in Neon PostgreSQL.</p>
         </div>
-        <span class="setting-badge">LocalStorage</span>
+        <span class="setting-badge">Neon PostgreSQL</span>
+    </div>
+
+    <div class="settings-card preferences-card">
+        <div>
+            <strong>Personalization</strong>
+            <p>Atur nama panggilan, bahasa, dan gaya jawaban NEX AI.</p>
+        </div>
+        <div class="preference-fields">
+            <label>Nama panggilan<input id="prefName" type="text" maxlength="50" placeholder="Contoh: Davit"></label>
+            <label>Bahasa jawaban<select id="prefLanguage"><option value="id">Indonesia</option><option value="en">English</option></select></label>
+            <label>Gaya jawaban<select id="prefStyle"><option value="balanced">Seimbang</option><option value="concise">Ringkas</option><option value="detailed">Detail</option></select></label>
+            <button id="savePreferencesBtn" type="button">Simpan preferensi</button>
+        </div>
     </div>
 
     <div class="settings-card">
