@@ -1682,3 +1682,79 @@ header { flex-shrink: 0; }
     }
     .stock-inventory-footer .stock-primary-btn { width: 100%; }
 }
+
+/* Stock transactions - Stage 4 */
+.stock-transaction-form {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 12px;
+    align-items: end;
+    margin-top: 16px;
+}
+.stock-transaction-form label {
+    display: grid;
+    gap: 7px;
+    color: #aaa;
+    font-size: 11px;
+}
+.stock-transaction-form input,
+.stock-transaction-form select {
+    width: 100%;
+    min-width: 0;
+    padding: 11px 12px;
+    border: 1px solid #ffffff18;
+    border-radius: 8px;
+    background: #08080d;
+    color: #fff;
+    outline: none;
+    font: inherit;
+    font-size: 12px;
+}
+.stock-transaction-form input:focus,
+.stock-transaction-form select:focus { border-color: #7656d6; }
+.stock-transaction-form .stock-primary-btn { min-height: 39px; }
+.stock-availability-wrap,
+.stock-transaction-history-wrap { margin-top: 22px; }
+.stock-availability-wrap h4,
+.stock-transaction-history-wrap h4 {
+    margin-bottom: 10px;
+    color: #eee;
+    font-size: 13px;
+}
+.stock-availability-list,
+.stock-transaction-history {
+    overflow: hidden;
+    border: 1px solid #ffffff12;
+    border-radius: 10px;
+}
+.stock-availability-row,
+.stock-transaction-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 14px;
+    padding: 11px 13px;
+    border-bottom: 1px solid #ffffff10;
+}
+.stock-availability-row:last-child,
+.stock-transaction-row:last-child { border-bottom: 0; }
+.stock-availability-row > div,
+.stock-transaction-row-main { display: grid; gap: 4px; min-width: 0; }
+.stock-availability-row strong,
+.stock-transaction-row strong { color: #eee; font-size: 12px; }
+.stock-availability-row small,
+.stock-transaction-row small { color: #777; font-size: 10px; overflow-wrap: anywhere; }
+.stock-availability-row > strong { font-variant-numeric: tabular-nums; }
+.stock-availability-row .stock-low { color: #ffb45e; }
+.stock-transaction-amount { color: #ff9b9b; font-size: 12px; font-weight: 700; white-space: nowrap; }
+.stock-transaction-amount small { color: #888; font-weight: 400; }
+
+@media(max-width:850px) {
+    .stock-transaction-form { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media(max-width:600px) {
+    .stock-transaction-form { grid-template-columns: 1fr; }
+    .stock-transaction-form .stock-primary-btn { width: 100%; }
+    .stock-availability-row,
+    .stock-transaction-row { padding: 10px; }
+}

@@ -147,7 +147,7 @@ function navigateTo(pageName) {
         pageTitles[pageName] || "NEX AI";
 
     if (pageName === "projects") renderProjects();
-    if (pageName === "stock") { loadStockProducts(); loadStockInventory(); }
+    if (pageName === "stock") { loadStockProducts(); loadStockInventory(); loadStockTransactions(); }
 
     if (pageName === "chat") {
         input.focus();
@@ -1527,7 +1527,7 @@ document.getElementById("stockAliasCloseBtn")?.addEventListener("click", () => {
     stockAliasPanel.hidden = true;
 });
 
-document.getElementById("stockRefreshBtn")?.addEventListener("click", loadStockProducts);
+document.getElementById("stockRefreshBtn")?.addEventListener("click", () => { loadStockProducts(); loadStockInventory(); loadStockTransactions(); });
 stockProductFilter?.addEventListener("change", renderStockProducts);
 stockProductSearch?.addEventListener("input", () => {
     clearTimeout(stockSearchDebounce);
@@ -1655,4 +1655,125 @@ stockInventoryForm?.addEventListener("submit", async event => {
 
 if (stockInventoryDate) {
     stockInventoryDate.value = getJakartaBusinessDate();
+}
+
+
+// ==========================
+// STOCK TRANSACTIONS - STAGE 4
+// ==========================
+
+const stockTransactionDate = document.getElementById("stockTransactionDate");
+const stockTransactionForm = document.getElementById("stockTransactionForm");
+const stockTransactionProduct = document.getElementById("stockTransactionProduct");
+const stockTransactionQuantity = document.getElementById("stockTransactionQuantity");
+const stockTransactionNotes = document.getElementById("stockTransactionNotes");
+const stockTransactionSaveBtn = document.getElementById("stockTransactionSaveBtn");
+const stockAvailabilityList = document.getElementById("stockAvailabilityList");
+const stockTransactionHistory = document.getElementById("stockTransactionHistory");
+let stockTransactionProducts = [];
+
+function renderStockTransactionData(data) {
+    stockTransactionProducts = data.products || [];
+    const previousValue = stockTransactionProduct.value;
+    stockTransactionProduct.innerHTML = '<option value="">Pilih produk</option>' +
+        stockTransactionProducts.map(product => `
+            <option value="${product.product_id}" ${!product.inventory_initialized ? "disabled" : ""}>
+                ${escapeHTML(product.name)}${!product.inventory_initialized ? " — stok awal belum diisi" : ""}
+            </option>
+        `).join("");
+    if (stockTransactionProducts.some(product => String(product.product_id) === previousValue && product.inventory_initialized)) {
+        stockTransactionProduct.value = previousValue;
+    }
+
+    if (!stockTransactionProducts.length) {
+        stockAvailabilityList.innerHTML = '<div class="stock-empty">Belum ada produk aktif.</div>';
+    } else {
+        stockAvailabilityList.innerHTML = stockTransactionProducts.map(product => {
+            const available = Number(product.available_stock || 0);
+            const low = available <= Number(product.low_stock_threshold || 0);
+            return `
+                <div class="stock-availability-row">
+                    <div><strong>${escapeHTML(product.name)}</strong><small>${escapeHTML(product.unit)}</small></div>
+                    <strong class="${low ? "stock-low" : ""}">${formatStockNumber(available)}</strong>
+                </div>
+            `;
+        }).join("");
+    }
+
+    const history = data.transactions || [];
+    if (!history.length) {
+        stockTransactionHistory.innerHTML = '<div class="stock-empty">Belum ada transaksi pada tanggal ini.</div>';
+    } else {
+        stockTransactionHistory.innerHTML = history.map(item => `
+            <article class="stock-transaction-row">
+                <div class="stock-transaction-row-main">
+                    <strong>${escapeHTML(item.product_name)}</strong>
+                    <small>${escapeHTML(item.transaction_code)} · ${new Date(item.created_at).toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" })}</small>
+                    ${item.notes ? `<small>${escapeHTML(item.notes)}</small>` : ""}
+                </div>
+                <div class="stock-transaction-amount">−${formatStockNumber(item.quantity)} <small>${escapeHTML(item.unit || "")}</small></div>
+            </article>
+        `).join("");
+    }
+
+    if (!data.inventory_initialized) {
+        stockSetMessage("stockTransactionMessage", "Beberapa produk belum memiliki stok awal pada tanggal ini. Lengkapi Stok Awal Harian sebelum mencatat penjualan.", true);
+    } else {
+        stockSetMessage("stockTransactionMessage", "Stok dan riwayat transaksi berhasil dimuat.");
+    }
+}
+
+async function loadStockTransactions() {
+    if (!stockTransactionDate || !stockAvailabilityList) return;
+    const businessDate = stockTransactionDate.value || getJakartaBusinessDate();
+    stockAvailabilityList.innerHTML = '<div class="stock-empty">Memuat stok...</div>';
+    stockTransactionHistory.innerHTML = '<div class="stock-empty">Memuat riwayat...</div>';
+    try {
+        const data = await stockApi(`/api/stock/transactions?date=${encodeURIComponent(businessDate)}`);
+        renderStockTransactionData(data);
+    } catch (error) {
+        stockAvailabilityList.innerHTML = `<div class="stock-empty stock-error">${escapeHTML(error.message)}</div>`;
+        stockTransactionHistory.innerHTML = '<div class="stock-empty">Riwayat tidak dapat dimuat.</div>';
+        stockSetMessage("stockTransactionMessage", error.message, true);
+    }
+}
+
+stockTransactionDate?.addEventListener("change", loadStockTransactions);
+
+stockTransactionForm?.addEventListener("submit", async event => {
+    event.preventDefault();
+    const businessDate = stockTransactionDate.value;
+    const productId = stockTransactionProduct.value;
+    const quantity = stockTransactionQuantity.value;
+
+    if (!businessDate || !productId || quantity === "" || !Number.isFinite(Number(quantity)) || Number(quantity) <= 0) {
+        stockSetMessage("stockTransactionMessage", "Pilih tanggal, produk, dan jumlah penjualan yang valid.", true);
+        return;
+    }
+
+    stockTransactionSaveBtn.disabled = true;
+    stockSetMessage("stockTransactionMessage", "Menyimpan transaksi penjualan...");
+    try {
+        const result = await stockApi("/api/stock/transactions", {
+            method: "POST",
+            body: JSON.stringify({
+                business_date: businessDate,
+                product_id: productId,
+                quantity,
+                notes: stockTransactionNotes.value.trim()
+            })
+        });
+        stockTransactionForm.reset();
+        stockTransactionDate.value = businessDate;
+        stockSetMessage("stockTransactionMessage", result.message || "Penjualan berhasil dicatat.");
+        await loadStockTransactions();
+    } catch (error) {
+        stockSetMessage("stockTransactionMessage", error.message, true);
+    } finally {
+        stockTransactionSaveBtn.disabled = false;
+    }
+});
+
+if (stockTransactionDate) {
+    stockTransactionDate.value = getJakartaBusinessDate();
 }

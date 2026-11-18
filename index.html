@@ -170,6 +170,47 @@
         <p id="stockInventoryMessage" class="stock-message" aria-live="polite"></p>
     </div>
 
+    <div class="stock-panel stock-transaction-panel">
+        <div class="stock-panel-heading">
+            <div>
+                <h3>Catat Penjualan Manual</h3>
+                <p>Setiap penjualan akan mengurangi stok tersedia pada tanggal operasional yang dipilih.</p>
+            </div>
+            <div class="stock-inventory-date">
+                <label for="stockTransactionDate">Tanggal transaksi</label>
+                <input type="date" id="stockTransactionDate" required>
+            </div>
+        </div>
+        <form id="stockTransactionForm" class="stock-transaction-form">
+            <label>Produk
+                <select id="stockTransactionProduct" required>
+                    <option value="">Pilih produk</option>
+                </select>
+            </label>
+            <label>Jumlah terjual
+                <input id="stockTransactionQuantity" type="number" min="0.01" step="0.01" inputmode="decimal" required placeholder="Contoh: 2">
+            </label>
+            <label>Catatan (opsional)
+                <input id="stockTransactionNotes" type="text" maxlength="500" placeholder="Contoh: penjualan langsung">
+            </label>
+            <button type="submit" id="stockTransactionSaveBtn" class="stock-primary-btn">＋ Simpan Penjualan</button>
+        </form>
+        <p id="stockTransactionMessage" class="stock-message" aria-live="polite"></p>
+
+        <div class="stock-availability-wrap">
+            <h4>Stok Tersedia</h4>
+            <div id="stockAvailabilityList" class="stock-availability-list">
+                <div class="stock-empty">Pilih tanggal untuk melihat stok.</div>
+            </div>
+        </div>
+        <div class="stock-transaction-history-wrap">
+            <h4>Riwayat Transaksi</h4>
+            <div id="stockTransactionHistory" class="stock-transaction-history">
+                <div class="stock-empty">Belum ada transaksi.</div>
+            </div>
+        </div>
+    </div>
+
     <div class="stock-summary-grid">
         <div class="stock-summary-card"><small>Total Produk</small><strong id="stockProductTotal">—</strong><span>Data master produk</span></div>
         <div class="stock-summary-card"><small>Produk Aktif</small><strong id="stockActiveTotal">—</strong><span>Siap digunakan</span></div>
