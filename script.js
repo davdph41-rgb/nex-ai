@@ -23,6 +23,50 @@ try {
 } catch { conversationWorkspaceMap = {}; }
 let preferences = loadPreferences();
 
+// ==========================
+// GEMINI MODEL SELECTION
+// ==========================
+
+const DEFAULT_GEMINI_MODEL = "gemini-3.5-flash-lite";
+const GEMINI_MODEL_STORAGE_KEY = "nexGeminiModel";
+const ALLOWED_GEMINI_MODELS = [
+    "gemini-4-argon",
+    "gemini-4-carbon",
+    "gemini-4-hydrogen",
+    "gemini-3.8-flash",
+    "gemini-3.7-flash",
+    "gemini-3.6-flash",
+    "gemini-3.5-flash",
+    "gemini-3.5-flash-lite",
+    "gemini-3.1-flash-lite",
+    "gemini-3.1-pro-preview"
+];
+
+function loadGeminiModel() {
+    const savedModel = localStorage.getItem(GEMINI_MODEL_STORAGE_KEY);
+    return ALLOWED_GEMINI_MODELS.includes(savedModel)
+        ? savedModel
+        : DEFAULT_GEMINI_MODEL;
+}
+
+let selectedGeminiModel = loadGeminiModel();
+
+function renderGeminiModel() {
+    const modelSelect = document.getElementById("geminiModelSelect");
+    const modelStatus = document.getElementById("geminiModelStatus");
+
+    if (!modelSelect) return;
+
+    modelSelect.value = selectedGeminiModel;
+
+    if (modelStatus) {
+        const selectedOption = modelSelect.selectedOptions[0];
+        modelStatus.textContent = selectedOption
+            ? `Aktif: ${selectedOption.textContent}`
+            : "Model default";
+    }
+}
+
 function loadPreferences() {
     try {
         const value = JSON.parse(localStorage.getItem("nexPreferences") || "{}");
@@ -413,7 +457,8 @@ async function sendMessage() {
             message: visibleUserText,
             history: previousHistory,
             preferences,
-            projectContext: getActiveWorkspaceContext()
+            projectContext: getActiveWorkspaceContext(),
+            model: selectedGeminiModel
         };
 
         if (imageToSend) {
@@ -642,7 +687,8 @@ async function saveAssistantReply(message, history) {
             message,
             history,
             preferences,
-            projectContext: getActiveWorkspaceContext()
+            projectContext: getActiveWorkspaceContext(),
+            model: selectedGeminiModel
         })
     });
 
@@ -959,6 +1005,21 @@ savePreferencesBtn?.addEventListener("click", () => {
     alert("Preferensi NEX AI berhasil disimpan di perangkat ini.");
 });
 
+const geminiModelSelect = document.getElementById("geminiModelSelect");
+
+geminiModelSelect?.addEventListener("change", () => {
+    const nextModel = geminiModelSelect.value;
+
+    if (!ALLOWED_GEMINI_MODELS.includes(nextModel)) {
+        renderGeminiModel();
+        return;
+    }
+
+    selectedGeminiModel = nextModel;
+    localStorage.setItem(GEMINI_MODEL_STORAGE_KEY, selectedGeminiModel);
+    renderGeminiModel();
+});
+
 // ==========================
 // QUICK MESSAGE & INPUT
 // ==========================
@@ -1238,6 +1299,7 @@ async function initialize() {
     renderProjects();
     refreshWorkspaceSelect();
     renderPreferences();
+    renderGeminiModel();
     setupVoiceInput();
 
     navigateTo("home");
