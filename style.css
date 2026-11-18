@@ -1,3 +1,4 @@
+
 *{box-sizing:border-box;margin:0;padding:0}
 
 html,body{
@@ -365,10 +366,7 @@ footer{
     }
 }
 
-
-/* ==========================
-   PAGE NAVIGATION
-========================== */
+/* PAGE NAVIGATION */
 
 .page {
     display: none;
@@ -389,9 +387,7 @@ nav button.active {
     border-left: 2px solid #8b4dff;
 }
 
-/* ==========================
-   DASHBOARD
-========================== */
+/* DASHBOARD */
 
 .dashboard-grid {
     display: grid;
@@ -443,9 +439,7 @@ nav button.active {
     line-height: 1.6;
 }
 
-/* ==========================
-   SECTION HEADING
-========================== */
+/* SECTION HEADING */
 
 .section-heading {
     margin: 35px 0 25px;
@@ -461,9 +455,7 @@ nav button.active {
     font-size: 13px;
 }
 
-/* ==========================
-   FEATURE CARDS
-========================== */
+/* FEATURE CARDS */
 
 .feature-card {
     display: flex;
@@ -490,9 +482,7 @@ nav button.active {
     border-radius: 9px;
 }
 
-/* ==========================
-   PROJECTS
-========================== */
+/* PROJECTS */
 
 .project-form {
     display: grid;
@@ -574,9 +564,7 @@ nav button.active {
     font-size: 12px;
 }
 
-/* ==========================
-   SETTINGS
-========================== */
+/* SETTINGS */
 
 .settings-card {
     display: flex;
@@ -615,9 +603,7 @@ nav button.active {
     border-radius: 9px;
 }
 
-/* ==========================
-   CHAT PAGE
-========================== */
+/* CHAT PAGE */
 
 #chat.page.active {
     overflow: hidden;
@@ -633,9 +619,7 @@ nav button.active {
     flex-shrink: 0;
 }
 
-/* ==========================
-   MOBILE RESPONSIVE
-========================== */
+/* MOBILE RESPONSIVE */
 
 @media(max-width:700px) {
 
@@ -665,13 +649,9 @@ nav button.active {
     .project-form {
         width: 100%;
     }
-
 }
 
-
-/* ==========================
-   NEON CHAT HISTORY
-========================== */
+/* NEON CHAT HISTORY */
 
 .chat-layout {
     display: flex;
@@ -794,11 +774,7 @@ nav button.active {
     }
 }
 
-
-
-/* ==========================
-   RICH CHAT / MARKDOWN
-========================== */
+/* RICH CHAT / MARKDOWN */
 
 .message {
     min-width: 0;
@@ -936,9 +912,7 @@ nav button.active {
     overflow-wrap: anywhere;
 }
 
-/* ==========================
-   CHAT COMPOSER + IMAGE PICKER
-========================== */
+/* CHAT COMPOSER + IMAGE PICKER */
 
 .composer-wrap {
     width: 100%;
@@ -1038,23 +1012,138 @@ nav button.active {
     .composer-hint { font-size: 9px; }
 }
 
+/* PRODUCTIVITY FEATURES */
 
-/* =================================
-   NEX AI - FIXED CHAT LAYOUT
-================================= */
+.history-search,
+.workspace-select {
+    width: 100%;
+    min-width: 0;
+    border: 1px solid #ffffff18;
+    border-radius: 8px;
+    background: #111019;
+    color: #ddd;
+    padding: 9px 10px;
+    outline: none;
+    font-size: 11px;
+}
 
-html,
-body {
+.history-search:focus,
+.workspace-select:focus,
+.preference-fields input:focus,
+.preference-fields select:focus {
+    border-color: #7656d6;
+}
+
+.chat-tools-row {
+    display: flex;
+    gap: 6px;
+    min-width: 0;
+}
+
+.mini-tool-btn {
+    flex: 0 0 auto;
+    border: 1px solid #ffffff1c;
+    border-radius: 8px;
+    background: #191525;
+    color: #cdbbff;
+    padding: 8px 9px;
+    font-size: 10px;
+}
+
+.chat-tools-row .workspace-select { flex: 1; }
+
+.message-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-top: 12px;
+}
+
+.message-actions button {
+    border: 1px solid #ffffff18;
+    border-radius: 7px;
+    background: #ffffff08;
+    color: #9d91b9;
+    padding: 5px 8px;
+    font-size: 10px;
+}
+
+.message-actions button:hover {
+    background: #30234b;
+    color: #fff;
+}
+
+.voice-btn { font-size: 17px; }
+
+.voice-btn.listening {
+    color: #fff;
+    background: #8b2635;
+    border-color: #e45a70;
+    animation: voicePulse 1s infinite alternate;
+}
+
+@keyframes voicePulse {
+    from { opacity: .7; }
+    to { opacity: 1; }
+}
+
+.preferences-card { align-items: flex-start; }
+
+.preference-fields {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+    width: 100%;
+    max-width: 550px;
+}
+
+.preference-fields label {
+    display: grid;
+    gap: 6px;
+    color: #aaa;
+    font-size: 11px;
+}
+
+.preference-fields input,
+.preference-fields select {
+    width: 100%;
+    min-width: 0;
+    border: 1px solid #ffffff18;
+    border-radius: 8px;
+    background: #111019;
+    color: #fff;
+    padding: 10px;
+    outline: none;
+}
+
+.preference-fields button {
+    grid-column: 1 / -1;
+    border: 1px solid #5545a8;
+    border-radius: 8px;
+    background: #30234b;
+    color: white;
+    padding: 10px 14px;
+}
+
+.temporary-loading { color: #a99dbf; }
+
+@media(max-width:700px) {
+    .chat-tools-row { flex-wrap: wrap; }
+    .chat-tools-row .workspace-select { min-width: 90px; }
+    .preference-fields { grid-template-columns: 1fr; }
+    .preference-fields button { grid-column: auto; }
+    .message-actions button { min-height: 30px; }
+}
+
+/* FIXED APP FRAME + MOBILE CHAT SCROLL */
+
+html, body {
     width: 100%;
     height: 100%;
-    min-height: 100%;
     overflow: hidden;
 }
 
-body {
-    height: 100vh;
-    height: 100dvh;
-}
+body { height: 100vh; height: 100dvh; }
 
 .app {
     width: 100%;
@@ -1076,21 +1165,12 @@ main {
     overflow: hidden;
 }
 
-header {
-    flex-shrink: 0;
-    padding-bottom: 18px;
-}
-
-footer {
-    flex-shrink: 0;
-}
+header { flex-shrink: 0; }
 
 .page:not(#chat) {
     min-height: 0;
     overflow-y: auto;
 }
-
-/* CHAT */
 
 #chat.page.active {
     flex: 1;
@@ -1123,30 +1203,17 @@ footer {
 
 .chat-main .chat {
     flex: 1;
-    min-height: 0;
     height: 0;
-    margin: 0 auto;
+    min-height: 0;
     overflow-y: auto;
     overflow-x: hidden;
     overscroll-behavior: contain;
     scrollbar-width: thin;
-    scrollbar-color: #5545a8 transparent;
 }
 
-.composer-wrap {
-    flex-shrink: 0;
-}
+.composer-wrap { flex-shrink: 0; }
 
-/* =================================
-   ANDROID / MOBILE
-================================= */
-
-@media (max-width: 700px) {
-
-    .app {
-        align-items: stretch;
-    }
-
+@media(max-width:700px) {
     aside {
         flex: 0 0 58px;
         width: 58px;
@@ -1158,16 +1225,20 @@ footer {
     .logo {
         font-size: 21px;
         margin-bottom: 30px;
+        padding-left: 0;
+        text-align: center;
     }
 
-    nav {
-        gap: 7px;
-    }
+    nav { gap: 7px; }
 
     nav button {
         padding: 12px 3px;
+        text-align: center;
         font-size: 17px;
     }
+
+    nav b,
+    .status { display: none; }
 
     main {
         flex: 1;
@@ -1176,26 +1247,14 @@ footer {
         padding: 14px 10px;
     }
 
-    header {
-        padding-bottom: 12px;
-    }
+    header { padding-bottom: 12px; }
 
     header small {
         font-size: 9px;
         letter-spacing: 2px;
     }
 
-    h1 {
-        font-size: 18px;
-    }
-
-    .avatar {
-        width: 33px;
-        height: 33px;
-        flex-shrink: 0;
-    }
-
-    /* Riwayat chat menjadi baris horizontal */
+    h1 { font-size: 18px; }
 
     .chat-layout {
         flex-direction: column;
@@ -1205,22 +1264,12 @@ footer {
     .chat-sidebar {
         width: 100%;
         min-width: 0;
-        max-height: 105px;
+        max-height: 145px;
         padding: 7px;
-        gap: 5px;
-        border-radius: 10px;
+        gap: 6px;
     }
 
-    .new-chat-btn {
-        width: auto;
-        align-self: flex-start;
-        padding: 7px 12px;
-        font-size: 11px;
-    }
-
-    .history-heading {
-        display: none;
-    }
+    .history-heading { display: none; }
 
     .conversation-list {
         flex-direction: row;
@@ -1232,14 +1281,10 @@ footer {
     }
 
     .history-item {
-        flex: 0 0 135px;
-        width: 135px;
-        max-width: 135px;
-        font-size: 10px;
-        padding: 8px;
+        flex: 0 0 130px;
+        width: 130px;
+        max-width: 130px;
     }
-
-    /* Area percakapan */
 
     .chat-main {
         flex: 1;
@@ -1253,14 +1298,7 @@ footer {
         padding: 10px 2px;
     }
 
-    .message {
-        max-width: 100%;
-        padding: 13px;
-    }
-
-    .message .markdown-body {
-        font-size: 13px;
-    }
+    .message { max-width: 100%; }
 
     .composer-wrap {
         width: 100%;
@@ -1285,7 +1323,6 @@ footer {
         flex: 0 0 36px;
         width: 36px;
         height: 40px;
-        font-size: 22px;
     }
 
     .composer-wrap .input button#sendBtn {
@@ -1294,33 +1331,16 @@ footer {
         height: 40px;
     }
 
-    .image-preview {
-        max-width: 100%;
-    }
-
-    .image-preview-info {
-        min-width: 0;
-    }
-
-    .image-preview-info span {
-        max-width: 150px;
-    }
+    .image-preview { max-width: 100%; }
 
     footer {
         gap: 8px;
         font-size: 8px;
-        margin-top: 10px;
-    }
-
-    .markdown-body table {
-        max-width: 100%;
+        margin-top: 8px;
     }
 }
 
-/* Layar sangat kecil */
-
-@media (max-width: 380px) {
-
+@media(max-width:380px) {
     aside {
         flex-basis: 52px;
         width: 52px;
@@ -1333,12 +1353,7 @@ footer {
     }
 
     .history-item {
-        flex-basis: 115px;
-        width: 115px;
-    }
-
-    .composer-hint {
-        font-size: 8px;
+        flex-basis: 112px;
+        width: 112px;
     }
 }
-
