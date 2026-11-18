@@ -12,7 +12,7 @@ export default async function handler(req, res) {
   const sql = neon(process.env.DATABASE_URL);
 
   try {
-    // GET: Mengambil pesan berdasarkan conversationId
+    // GET: Mengambil pesan berdasarkan conversationId.
     if (req.method === "GET") {
       const conversationId = req.query.conversationId;
 
@@ -37,7 +37,7 @@ export default async function handler(req, res) {
       });
     }
 
-    // POST: Menyimpan pesan baru
+    // POST: Menyimpan pesan baru.
     if (req.method === "POST") {
       const { conversationId, role, content } = req.body || {};
 
@@ -90,6 +90,84 @@ export default async function handler(req, res) {
         success: true,
         message: "Pesan berhasil disimpan",
         data: result[0]
+      });
+    }
+
+    // PATCH: Edit pesan pengguna atau potong percakapan untuk regenerate.
+    if (req.method === "PATCH") {
+      const { id, content, action } = req.body || {};
+
+      if (!id || !/^\d+$/.test(String(id))) {
+        return res.status(400).json({
+          success: false,
+          message: "ID pesan tidak valid"
+        });
+      }
+
+      const targetRows = await sql`
+        SELECT id, conversation_id, role, created_at
+        FROM messages
+        WHERE id = ${id}
+      `;
+
+      if (!targetRows.length) {
+        return res.status(404).json({
+          success: false,
+          message: "Pesan tidak ditemukan"
+        });
+      }
+
+      const target = targetRows[0];
+
+      if (target.role !== "user") {
+        return res.status(400).json({
+          success: false,
+          message: "Hanya pesan pengguna yang dapat diproses"
+        });
+      }
+
+      if (action === "edit") {
+        if (typeof content !== "string" || !content.trim()) {
+          return res.status(400).json({
+            success: false,
+            message: "Isi pesan tidak boleh kosong"
+          });
+        }
+
+        await sql`
+          UPDATE messages
+          SET content = ${content.trim().slice(0, 20000)}
+          WHERE id = ${id}
+        `;
+
+      } else if (action !== "truncateAfter") {
+        return res.status(400).json({
+          success: false,
+          message: "Aksi tidak valid"
+        });
+      }
+
+      await sql`
+        DELETE FROM messages
+        WHERE conversation_id = ${target.conversation_id}
+          AND (
+            created_at > ${target.created_at}
+            OR (
+              created_at = ${target.created_at}
+              AND id > ${id}
+            )
+          )
+      `;
+
+      await sql`
+        UPDATE conversations
+        SET updated_at = NOW()
+        WHERE id = ${target.conversation_id}
+      `;
+
+      return res.status(200).json({
+        success: true,
+        message: "Percakapan diperbarui"
       });
     }
 
