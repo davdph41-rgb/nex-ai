@@ -19,6 +19,7 @@
         <button class="active" data-page="home">⌂ <b>Home</b></button>
         <button data-page="chat">✦ <b>AI Chat</b></button>
         <button data-page="tools">⌘ <b>Tools</b></button>
+        <button data-page="stock">▤ <b>Stock</b></button>
         <button data-page="projects">▣ <b>Projects</b></button>
         <button data-page="settings">⚙ <b>Settings</b></button>
     </nav>
@@ -134,6 +135,56 @@
 
     </div>
 
+</section>
+
+<!-- STOCK MANAGEMENT -->
+<section class="page" id="stock">
+    <div class="section-heading stock-heading">
+        <div>
+            <h2>Stock Management</h2>
+            <p>Kelola produk, alias menu, dan batas minimum stok.</p>
+        </div>
+        <button type="button" id="stockRefreshBtn" class="stock-secondary-btn">↻ Refresh</button>
+    </div>
+
+    <div class="stock-summary-grid">
+        <div class="stock-summary-card"><small>Total Produk</small><strong id="stockProductTotal">—</strong><span>Data master produk</span></div>
+        <div class="stock-summary-card"><small>Produk Aktif</small><strong id="stockActiveTotal">—</strong><span>Siap digunakan</span></div>
+        <div class="stock-summary-card"><small>Total Alias</small><strong id="stockAliasTotal">—</strong><span>Nama alternatif menu</span></div>
+    </div>
+
+    <div class="stock-panel">
+        <div class="stock-panel-heading">
+            <div><h3>Tambah Produk</h3><p>Produk baru akan tersimpan di database Neon.</p></div>
+        </div>
+        <form id="stockProductForm" class="stock-product-form">
+            <label>Nama produk<input id="stockProductName" maxlength="120" required placeholder="Contoh: Onion Rings"></label>
+            <label>Satuan<input id="stockProductUnit" maxlength="30" value="portion" required placeholder="portion"></label>
+            <label>Batas minimum stok<input id="stockProductThreshold" type="number" min="0" step="0.01" value="0" required></label>
+            <button type="submit" class="stock-primary-btn">＋ Tambah Produk</button>
+        </form>
+        <p id="stockProductFormMessage" class="stock-message" aria-live="polite"></p>
+    </div>
+
+    <div class="stock-products-toolbar">
+        <div><h3>Daftar Produk</h3><p>Produk master yang terhubung dengan transaksi stok.</p></div>
+        <div class="stock-search-wrap"><input id="stockProductSearch" type="search" placeholder="Cari produk atau alias..."><select id="stockProductFilter"><option value="active">Produk aktif</option><option value="all">Semua produk</option><option value="archived">Diarsipkan</option></select></div>
+    </div>
+    <div id="stockProductsList" class="stock-products-grid"><div class="stock-empty">Memuat produk...</div></div>
+
+    <div id="stockAliasPanel" class="stock-panel stock-alias-panel" hidden>
+        <div class="stock-panel-heading">
+            <div><h3 id="stockAliasTitle">Alias Produk</h3><p>Alias dipakai untuk mencocokkan variasi nama dari nota.</p></div>
+            <button type="button" id="stockAliasCloseBtn" class="stock-icon-btn" aria-label="Tutup">×</button>
+        </div>
+        <form id="stockAliasForm" class="stock-alias-form">
+            <input id="stockAliasProductId" type="hidden">
+            <label>Nama alias baru<input id="stockAliasName" maxlength="180" required placeholder="Contoh: Tempura Shrimp"></label>
+            <button type="submit" class="stock-primary-btn">＋ Tambah Alias</button>
+        </form>
+        <p id="stockAliasMessage" class="stock-message" aria-live="polite"></p>
+        <div id="stockAliasesList" class="stock-alias-list"></div>
+    </div>
 </section>
 
 <!-- TOOLS -->
