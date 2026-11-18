@@ -1,36 +1,301 @@
-<div class="settings-card preferences-card">
+
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>NEX AI</title>
+<link rel="stylesheet" href="style.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/highlight.js@11.11.1/styles/github-dark.min.css">
+</head>
+<body>
+
+<div class="app">
+
+<aside>
+    <div class="logo">NEX<span>.</span></div>
+
+    <nav>
+        <button class="active" data-page="home">⌂ <b>Home</b></button>
+        <button data-page="chat">✦ <b>AI Chat</b></button>
+        <button data-page="tools">⌘ <b>Tools</b></button>
+        <button data-page="projects">▣ <b>Projects</b></button>
+        <button data-page="settings">⚙ <b>Settings</b></button>
+    </nav>
+
+    <div class="status"><i></i> System Online</div>
+</aside>
+
+<main>
+
+<header>
     <div>
-        <strong>Gemini Model</strong>
-        <p>Pilih model AI untuk percakapan NEX AI.</p>
+        <small>NEX AI SYSTEM</small>
+        <h1 id="pageTitle">Your AI. <span>Connected.</span></h1>
+    </div>
+    <div class="avatar">D</div>
+</header>
+
+<!-- HOME -->
+<section class="page active" id="home">
+
+    <div class="hero">
+        <div class="orb"></div>
+        <h2>Welcome to NEX AI</h2>
+        <p>Your personal intelligence system.</p>
     </div>
 
-    <div class="preference-fields">
-        <label>Model AI
-            <select id="geminiModelSelect">
-                <optgroup label="Gemini 4">
-                    <option value="gemini-4-hydrogen">Gemini 4 Hydrogen</option>
+    <div class="dashboard-grid">
+        <button class="dashboard-card" data-go="chat">
+            <span>✦</span>
+            <strong>AI Chat</strong>
+            <small>Start a conversation with NEX AI</small>
+        </button>
+
+        <button class="dashboard-card" data-go="tools">
+            <span>⌘</span>
+            <strong>AI Tools</strong>
+            <small>Explore available AI capabilities</small>
+        </button>
+
+        <button class="dashboard-card" data-go="projects">
+            <span>▣</span>
+            <strong>Projects</strong>
+            <small>Manage your personal projects</small>
+        </button>
+
+        <button class="dashboard-card" data-go="settings">
+            <span>⚙</span>
+            <strong>Settings</strong>
+            <small>Manage your NEX AI preferences</small>
+        </button>
+    </div>
+
+</section>
+
+<!-- AI CHAT -->
+<section class="page" id="chat">
+
+    <div class="chat-layout">
+
+        <div class="chat-sidebar">
+            <button id="newChatBtn" class="new-chat-btn">
+                + New Chat
+            </button>
+
+            <div class="history-heading">CHAT HISTORY</div>
+            <input id="historySearch" class="history-search" type="search" placeholder="Cari percakapan..." aria-label="Cari riwayat chat">
+            <div class="chat-tools-row">
+                <button id="exportChatBtn" type="button" class="mini-tool-btn" title="Ekspor percakapan">⇩ Export</button>
+                <select id="workspaceSelect" class="workspace-select" aria-label="Pilih workspace">
+                    <option value="">Umum</option>
+                </select>
+            </div>
+
+            <div id="conversationList" class="conversation-list">
+                <p class="history-loading">Loading chats...</p>
+            </div>
+        </div>
+
+        <div class="chat-main">
+
+            <div class="chat" id="chatMessages">
+                <div class="message ai">
+                    <strong>NEX AI</strong>
+                    <p>Halo! 👋 Aku NEX AI. Ada yang ingin kamu kerjakan?</p>
+                </div>
+            </div>
+
+            <div class="composer-wrap">
+                <div id="imagePreview" class="image-preview" hidden>
+                    <img id="imagePreviewImg" alt="Preview foto yang akan dikirim">
+                    <div class="image-preview-info">
+                        <span id="imagePreviewName">Foto terpilih</span>
+                        <button type="button" id="removeImageBtn" aria-label="Hapus foto">×</button>
+                    </div>
+                </div>
+
+                <div class="input">
+                    <input id="imageInput" type="file" accept="image/*" hidden>
+                    <button type="button" id="attachImageBtn" class="attach-btn" title="Tambah foto" aria-label="Tambah foto">＋</button>
+                    <button type="button" id="voiceInputBtn" class="attach-btn voice-btn" title="Dikte dengan suara" aria-label="Dikte dengan suara">🎙</button>
+                    <textarea
+                        id="messageInput"
+                        rows="1"
+                        placeholder="Ask NEX anything..."
+                        autocomplete="off"
+                    ></textarea>
+                    <button id="sendBtn" type="button" title="Kirim pesan">➤</button>
+                </div>
+                <p class="composer-hint">NEX AI dapat membaca foto. Jangan unggah informasi rahasia.</p>
+            </div>
+
+        </div>
+
+    </div>
+
+</section>
+
+<!-- TOOLS -->
+<section class="page" id="tools">
+
+    <div class="section-heading">
+        <h2>AI Tools</h2>
+        <p>Discover the capabilities connected to NEX AI.</p>
+    </div>
+
+    <div class="dashboard-grid">
+
+        <div class="feature-card">
+            <span>🌤️</span>
+            <strong>Weather</strong>
+            <p>Weather information through the existing weather API.</p>
+            <small class="feature-status">Backend endpoint: /api/weather</small>
+        </div>
+
+        <div class="feature-card">
+            <span>⌘</span>
+            <strong>GitHub Search</strong>
+            <p>Explore repositories and programming projects.</p>
+            <small class="feature-status">Available through tool system</small>
+        </div>
+
+        <div class="feature-card">
+            <span>🧠</span>
+            <strong>AI Chat</strong>
+            <p>Ask questions and interact with your AI assistant.</p>
+            <button data-go="chat">Open AI Chat →</button>
+        </div>
+
+        <div class="feature-card">
+            <span>📁</span>
+            <strong>Project Manager</strong>
+            <p>Organize your projects and track your work.</p>
+            <button data-go="projects">Open Projects →</button>
+        </div>
+
+    </div>
+
+</section>
+
+<!-- PROJECTS -->
+<section class="page" id="projects">
+
+    <div class="section-heading">
+        <h2>My Projects</h2>
+        <p>Organize and manage your personal projects.</p>
+    </div>
+
+    <div class="project-form">
+        <input id="projectName" type="text" placeholder="Project name...">
+        <input id="projectDescription" type="text" placeholder="Project description...">
+        <button id="addProjectBtn">+ Add Project</button>
+    </div>
+
+    <div id="projectList" class="project-list"></div>
+
+</section>
+
+<!-- SETTINGS -->
+<section class="page" id="settings">
+
+    <div class="section-heading">
+        <h2>Settings</h2>
+        <p>Manage your NEX AI application.</p>
+    </div>
+
+    <div class="settings-card">
+        <div>
+            <strong>AI Core</strong>
+            <p>Gemini API connection through your backend.</p>
+        </div>
+        <span class="setting-badge">Connected by backend</span>
+    </div>
+
+    <div class="settings-card">
+        <div>
+            <strong>Conversation Storage</strong>
+            <p>Your conversations are stored in Neon PostgreSQL.</p>
+        </div>
+        <span class="setting-badge">Neon PostgreSQL</span>
+    </div>
+
+    <div class="settings-card model-settings-card">
+        <div class="model-settings-heading">
+            <strong>Gemini Model</strong>
+            <p>Pilih model Gemini yang digunakan NEX AI untuk chat, analisis, dan tools.</p>
+        </div>
+        <div class="model-settings-fields">
+            <label for="geminiModelSelect">Model aktif</label>
+            <select id="geminiModelSelect" aria-describedby="geminiModelDescription">
+                <optgroup label="Gemini 4 — Frontier">
                     <option value="gemini-4-argon">Gemini 4 Argon</option>
                     <option value="gemini-4-carbon">Gemini 4 Carbon</option>
+                    <option value="gemini-4-hydrogen">Gemini 4 Hydrogen</option>
                 </optgroup>
-
-                <optgroup label="Gemini 3">
+                <optgroup label="Gemini 3 — Flash">
                     <option value="gemini-3.8-flash">Gemini 3.8 Flash</option>
                     <option value="gemini-3.7-flash">Gemini 3.7 Flash</option>
                     <option value="gemini-3.6-flash">Gemini 3.6 Flash</option>
                     <option value="gemini-3.5-flash">Gemini 3.5 Flash</option>
                     <option value="gemini-3.5-flash-lite">Gemini 3.5 Flash-Lite</option>
                     <option value="gemini-3.1-flash-lite">Gemini 3.1 Flash-Lite</option>
+                </optgroup>
+                <optgroup label="Gemini 3 — Pro">
                     <option value="gemini-3.1-pro-preview">Gemini 3.1 Pro Preview</option>
                 </optgroup>
             </select>
-        </label>
-
-        <span id="geminiModelStatus" class="setting-badge">
-            Model default
-        </span>
-
-        <p class="model-note">
-            Ketersediaan model bergantung pada akses API dan paket akun.
-        </p>
+            <span id="geminiModelStatus" class="setting-badge" aria-live="polite">Model aktif</span>
+            <p id="geminiModelDescription" class="model-note">Model Gemini 4 Argon dan Carbon memerlukan billing aktif. Ketersediaan model bergantung pada akses API akunmu.</p>
+        </div>
     </div>
+
+    <div class="settings-card preferences-card">
+        <div>
+            <strong>Personalization</strong>
+            <p>Atur nama panggilan, bahasa, dan gaya jawaban NEX AI.</p>
+        </div>
+        <div class="preference-fields">
+            <label>Nama panggilan<input id="prefName" type="text" maxlength="50" placeholder="Contoh: Davit"></label>
+            <label>Bahasa jawaban<select id="prefLanguage"><option value="id">Indonesia</option><option value="en">English</option></select></label>
+            <label>Gaya jawaban<select id="prefStyle"><option value="balanced">Seimbang</option><option value="concise">Ringkas</option><option value="detailed">Detail</option></select></label>
+            <button id="savePreferencesBtn" type="button">Simpan preferensi</button>
+        </div>
+    </div>
+
+    <div class="settings-card">
+        <div>
+            <strong>Clear Conversation</strong>
+            <p>Delete your saved NEX AI conversation from this device.</p>
+        </div>
+        <button id="clearChatBtn" class="danger-button">
+            Clear Chat
+        </button>
+    </div>
+
+    <div class="settings-card">
+        <div>
+            <strong>Application Version</strong>
+            <p>NEX AI v1.0</p>
+        </div>
+    </div>
+
+</section>
+
+<footer>
+    <span>AI CORE</span>
+    <span>API READY</span>
+    <span>v1.0</span>
+</footer>
+
+</main>
 </div>
+
+<!-- Markdown renderer, HTML sanitizer, and syntax highlighting -->
+<script src="https://cdn.jsdelivr.net/npm/marked@15.0.7/marked.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/dompurify@3.2.6/dist/purify.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/highlight.js@11.11.1/lib/highlight.min.js"></script>
+<script src="script.js"></script>
+
+</body>
+</html>
