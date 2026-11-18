@@ -1,3 +1,4 @@
+
 import {
     toolDeclarations,
     executeTool
@@ -14,7 +15,7 @@ export default async function handler(req, res) {
     }
 
     try {
-        const { message, history = [], image = null } = req.body || {};
+        const { message, history = [], image = null, preferences = {}, projectContext = "" } = req.body || {};
         const key = process.env.GEMINI_API_KEY;
 
         if (!message || typeof message !== "string") {
@@ -80,12 +81,24 @@ export default async function handler(req, res) {
         // SYSTEM INSTRUCTION
         // ==========================
 
+        const safeName = typeof preferences.name === "string" ? preferences.name.trim().slice(0, 50) : "";
+        const safeLanguage = preferences.language === "en" ? "English" : "Indonesia";
+        const safeStyle = ["concise", "detailed"].includes(preferences.style) ? preferences.style : "balanced";
+        const safeProjectContext = typeof projectContext === "string" ? projectContext.trim().slice(0, 3000) : "";
+
+        const personalizationInstruction =
+            `\n\nPREFERENSI PENGGUNA:\n` +
+            `- Nama panggilan: ${safeName || "tidak ditentukan"}\n` +
+            `- Bahasa jawaban: ${safeLanguage}\n` +
+            `- Gaya jawaban: ${safeStyle === "concise" ? "ringkas" : safeStyle === "detailed" ? "detail dan terstruktur" : "seimbang"}.\n` +
+            (safeProjectContext ? `\nKONTEKS WORKSPACE AKTIF:\n${safeProjectContext}\nGunakan konteks ini jika relevan dengan permintaan pengguna.\n` : "");
+
         const systemInstruction = {
             parts: [{
                 text:
                     "Kamu adalah NEX AI, asisten AI pribadi. " +
 
-                    "Jawab menggunakan bahasa Indonesia yang ramah, jelas, dan natural. " +
+                    "Jawab menggunakan bahasa yang dipilih pada preferensi pengguna. Jika tidak ada preferensi, gunakan bahasa Indonesia yang ramah, jelas, dan natural. " +
 
                     "Gunakan riwayat percakapan untuk memahami konteks. " +
 
@@ -96,6 +109,7 @@ export default async function handler(req, res) {
                     "Jika pengguna mengirim gambar, analisis isi gambar secara visual dan jawab pertanyaan pengguna berdasarkan gambar tersebut. Jika detail tidak jelas, katakan dengan jujur. " +
 
                     "Jangan mengarang hasil dari tool. " +
+                    personalizationInstruction +
 
                     "\n\n===== MEMORY NEX AI =====\n" +
 
