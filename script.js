@@ -126,6 +126,7 @@ const pageTitles = {
     home: 'Your AI. <span>Connected.</span>',
     chat: 'AI <span>Chat.</span>',
     tools: 'AI <span>Tools.</span>',
+    stock: 'Stock <span>Management.</span>',
     projects: 'My <span>Projects.</span>',
     settings: 'System <span>Settings.</span>'
 };
@@ -146,6 +147,7 @@ function navigateTo(pageName) {
         pageTitles[pageName] || "NEX AI";
 
     if (pageName === "projects") renderProjects();
+    if (pageName === "stock") loadStockProducts();
 
     if (pageName === "chat") {
         input.focus();
@@ -1306,3 +1308,228 @@ async function initialize() {
 }
 
 initialize();
+
+
+// ==========================
+// STOCK MANAGEMENT - STAGE 2
+// ==========================
+
+const stockProductsList = document.getElementById("stockProductsList");
+const stockProductForm = document.getElementById("stockProductForm");
+const stockProductSearch = document.getElementById("stockProductSearch");
+const stockProductFilter = document.getElementById("stockProductFilter");
+const stockAliasPanel = document.getElementById("stockAliasPanel");
+let stockProductsCache = [];
+let stockSearchDebounce = null;
+
+async function stockApi(url, options = {}) {
+    return apiRequest(url, options);
+}
+
+function stockSetMessage(elementId, message, isError = false) {
+    const element = document.getElementById(elementId);
+    if (!element) return;
+    element.textContent = message;
+    element.classList.toggle("error", isError);
+}
+
+function formatStockNumber(value) {
+    const number = Number(value || 0);
+    return Number.isInteger(number) ? String(number) : number.toLocaleString("id-ID");
+}
+
+async function loadStockProducts() {
+    if (!stockProductsList) return;
+    stockProductsList.innerHTML = '<div class="stock-empty">Memuat produk dari Neon...</div>';
+    try {
+        const query = stockProductSearch?.value.trim() || "";
+        const data = await stockApi(`/api/stock/products${query ? `?q=${encodeURIComponent(query)}` : ""}`);
+        stockProductsCache = data.products || [];
+        renderStockProducts();
+    } catch (error) {
+        stockProductsList.innerHTML = `<div class="stock-empty stock-error">${escapeHTML(error.message)}</div>`;
+        stockSetMessage("stockProductFormMessage", "Gagal mengambil data produk.", true);
+    }
+}
+
+function renderStockProducts() {
+    const filter = stockProductFilter?.value || "active";
+    const products = stockProductsCache.filter(product => {
+        if (filter === "active") return product.is_active;
+        if (filter === "archived") return !product.is_active;
+        return true;
+    });
+
+    const activeCount = stockProductsCache.filter(product => product.is_active).length;
+    const aliasCount = stockProductsCache.reduce((total, product) => total + Number(product.alias_count || 0), 0);
+    document.getElementById("stockProductTotal").textContent = stockProductsCache.length;
+    document.getElementById("stockActiveTotal").textContent = activeCount;
+    document.getElementById("stockAliasTotal").textContent = aliasCount;
+
+    if (!products.length) {
+        stockProductsList.innerHTML = '<div class="stock-empty">Tidak ada produk pada filter ini.</div>';
+        return;
+    }
+
+    stockProductsList.innerHTML = products.map(product => `
+        <article class="stock-product-card ${product.is_active ? "" : "is-archived"}">
+            <div class="stock-product-topline"><span class="stock-product-code">${escapeHTML(product.code)}</span><span class="stock-status ${product.is_active ? "active" : "archived"}">${product.is_active ? "Aktif" : "Diarsipkan"}</span></div>
+            <h4>${escapeHTML(product.name)}</h4>
+            <div class="stock-product-meta"><span>Satuan: <b>${escapeHTML(product.unit)}</b></span><span>Min. stok: <b>${formatStockNumber(product.low_stock_threshold)}</b></span><span>Alias: <b>${Number(product.alias_count || 0)}</b></span></div>
+            <div class="stock-product-actions">
+                ${product.is_active ? `<button type="button" data-stock-action="edit" data-id="${product.id}">Edit</button><button type="button" data-stock-action="aliases" data-id="${product.id}">Kelola Alias</button><button type="button" class="danger" data-stock-action="archive" data-id="${product.id}">Arsipkan</button>` : `<button type="button" data-stock-action="restore" data-id="${product.id}">Pulihkan</button>`}
+            </div>
+        </article>
+    `).join("");
+}
+
+stockProductForm?.addEventListener("submit", async event => {
+    event.preventDefault();
+    const submitButton = stockProductForm.querySelector('button[type="submit"]');
+    const payload = {
+        name: document.getElementById("stockProductName").value.trim(),
+        unit: document.getElementById("stockProductUnit").value.trim(),
+        low_stock_threshold: Number(document.getElementById("stockProductThreshold").value)
+    };
+    submitButton.disabled = true;
+    stockSetMessage("stockProductFormMessage", "Menyimpan produk...");
+    try {
+        const result = await stockApi("/api/stock/products", { method: "POST", body: JSON.stringify(payload) });
+        stockProductForm.reset();
+        document.getElementById("stockProductUnit").value = "portion";
+        document.getElementById("stockProductThreshold").value = "0";
+        stockSetMessage("stockProductFormMessage", result.message || "Produk berhasil ditambahkan.");
+        await loadStockProducts();
+    } catch (error) {
+        stockSetMessage("stockProductFormMessage", error.message, true);
+    } finally {
+        submitButton.disabled = false;
+    }
+});
+
+stockProductsList?.addEventListener("click", async event => {
+    const button = event.target.closest("[data-stock-action]");
+    if (!button) return;
+    const product = stockProductsCache.find(item => String(item.id) === button.dataset.id);
+    if (!product) return;
+    const action = button.dataset.stockAction;
+
+    if (action === "aliases") {
+        openStockAliases(product);
+        return;
+    }
+    if (action === "edit") {
+        const name = prompt("Nama produk:", product.name);
+        if (name === null) return;
+        const unit = prompt("Satuan produk:", product.unit);
+        if (unit === null) return;
+        const threshold = prompt("Batas minimum stok:", product.low_stock_threshold);
+        if (threshold === null) return;
+        try {
+            const result = await stockApi("/api/stock/products", {
+                method: "PATCH",
+                body: JSON.stringify({ id: product.id, name: name.trim(), unit: unit.trim(), low_stock_threshold: Number(threshold) })
+            });
+            stockSetMessage("stockProductFormMessage", result.message);
+            await loadStockProducts();
+        } catch (error) {
+            stockSetMessage("stockProductFormMessage", error.message, true);
+        }
+        return;
+    }
+    if (action === "archive") {
+        if (!confirm(`Arsipkan produk "${product.name}"? Produk tidak akan muncul sebagai produk aktif, tetapi riwayat transaksi tetap aman.`)) return;
+        try {
+            const result = await stockApi(`/api/stock/products?id=${product.id}`, { method: "DELETE" });
+            stockSetMessage("stockProductFormMessage", result.message);
+            await loadStockProducts();
+        } catch (error) {
+            stockSetMessage("stockProductFormMessage", error.message, true);
+        }
+        return;
+    }
+    if (action === "restore") {
+        if (!confirm(`Pulihkan produk "${product.name}"?`)) return;
+        try {
+            const result = await stockApi("/api/stock/products", {
+                method: "PATCH", body: JSON.stringify({ id: product.id, is_active: true })
+            });
+            stockSetMessage("stockProductFormMessage", result.message);
+            await loadStockProducts();
+        } catch (error) {
+            stockSetMessage("stockProductFormMessage", error.message, true);
+        }
+    }
+});
+
+async function openStockAliases(product) {
+    stockAliasPanel.hidden = false;
+    document.getElementById("stockAliasProductId").value = product.id;
+    document.getElementById("stockAliasTitle").textContent = `Alias: ${product.name}`;
+    document.getElementById("stockAliasName").value = "";
+    stockSetMessage("stockAliasMessage", "Memuat alias...");
+    await loadStockAliases(product.id);
+    stockAliasPanel.scrollIntoView({ behavior: "smooth", block: "start" });
+}
+
+async function loadStockAliases(productId) {
+    const list = document.getElementById("stockAliasesList");
+    list.innerHTML = '<p class="stock-empty">Memuat alias...</p>';
+    try {
+        const data = await stockApi(`/api/stock/aliases?product_id=${encodeURIComponent(productId)}`);
+        if (!data.aliases?.length) {
+            list.innerHTML = '<p class="stock-empty">Belum ada alias tambahan.</p>';
+        } else {
+            list.innerHTML = data.aliases.map(alias => `
+                <div class="stock-alias-item"><span>${escapeHTML(alias.raw_alias)}</span><button type="button" data-alias-delete="${alias.id}" aria-label="Hapus alias ${escapeHTML(alias.raw_alias)}">Hapus</button></div>
+            `).join("");
+        }
+        stockSetMessage("stockAliasMessage", `${data.total} alias terdaftar.`);
+    } catch (error) {
+        list.innerHTML = `<p class="stock-empty stock-error">${escapeHTML(error.message)}</p>`;
+        stockSetMessage("stockAliasMessage", "Gagal memuat alias.", true);
+    }
+}
+
+document.getElementById("stockAliasForm")?.addEventListener("submit", async event => {
+    event.preventDefault();
+    const productId = document.getElementById("stockAliasProductId").value;
+    const rawAlias = document.getElementById("stockAliasName").value.trim();
+    try {
+        const result = await stockApi("/api/stock/aliases", {
+            method: "POST", body: JSON.stringify({ product_id: productId, raw_alias: rawAlias })
+        });
+        document.getElementById("stockAliasName").value = "";
+        stockSetMessage("stockAliasMessage", result.message);
+        await loadStockAliases(productId);
+        await loadStockProducts();
+    } catch (error) {
+        stockSetMessage("stockAliasMessage", error.message, true);
+    }
+});
+
+document.getElementById("stockAliasesList")?.addEventListener("click", async event => {
+    const button = event.target.closest("[data-alias-delete]");
+    if (!button) return;
+    if (!confirm("Hapus alias ini?")) return;
+    const productId = document.getElementById("stockAliasProductId").value;
+    try {
+        const result = await stockApi(`/api/stock/aliases?id=${button.dataset.aliasDelete}`, { method: "DELETE" });
+        stockSetMessage("stockAliasMessage", result.message);
+        await loadStockAliases(productId);
+        await loadStockProducts();
+    } catch (error) {
+        stockSetMessage("stockAliasMessage", error.message, true);
+    }
+});
+
+document.getElementById("stockAliasCloseBtn")?.addEventListener("click", () => {
+    stockAliasPanel.hidden = true;
+});
+
+document.getElementById("stockRefreshBtn")?.addEventListener("click", loadStockProducts);
+stockProductFilter?.addEventListener("change", renderStockProducts);
+stockProductSearch?.addEventListener("input", () => {
+    clearTimeout(stockSearchDebounce);
+    stockSearchDebounce = setTimeout(loadStockProducts, 250);
+});
