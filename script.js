@@ -1666,11 +1666,42 @@ const stockTransactionDate = document.getElementById("stockTransactionDate");
 const stockTransactionForm = document.getElementById("stockTransactionForm");
 const stockTransactionProduct = document.getElementById("stockTransactionProduct");
 const stockTransactionQuantity = document.getElementById("stockTransactionQuantity");
+const stockTransactionTime = document.getElementById("stockTransactionTime");
 const stockTransactionNotes = document.getElementById("stockTransactionNotes");
 const stockTransactionSaveBtn = document.getElementById("stockTransactionSaveBtn");
 const stockAvailabilityList = document.getElementById("stockAvailabilityList");
 const stockTransactionHistory = document.getElementById("stockTransactionHistory");
 let stockTransactionProducts = [];
+const stockSessionList = document.getElementById("stockSessionList");
+const stockSessionDayType = document.getElementById("stockSessionDayType");
+
+function currentJakartaTime() {
+    return new Intl.DateTimeFormat("en-GB", {
+        timeZone: "Asia/Jakarta", hour: "2-digit", minute: "2-digit", hourCycle: "h23"
+    }).format(new Date());
+}
+
+async function loadStockSessions() {
+    if (!stockSessionList || !stockTransactionDate?.value) return;
+    stockSessionList.innerHTML = '<div class="stock-empty">Memuat jadwal sesi...</div>';
+    try {
+        const data = await stockApi(`/api/stock/sessions?date=${encodeURIComponent(stockTransactionDate.value)}`);
+        stockSessionDayType.textContent = data.day_type === "weekend" ? "Jadwal Weekend" : "Jadwal Weekday";
+        stockSessionList.innerHTML = (data.sessions || []).map(session => {
+            const statusText = session.status === "open" ? "Sedang berlangsung" : session.status === "closed" ? "Terkunci" : "Belum dimulai";
+            const statusClass = session.status === "open" ? "is-open" : session.status === "closed" ? "is-closed" : "is-scheduled";
+            return `<div class="stock-session-card ${statusClass}">
+                <div><strong>Sesi ${session.session_number}</strong><small>${String(session.start_time).slice(0,5)}–${String(session.end_time).slice(0,5)}</small></div>
+                <span>${statusText}</span>
+            </div>`;
+        }).join("");
+        const active = data.active_session;
+        stockSetMessage("stockSessionMessage", active ? `Sesi ${active.session_number} sedang aktif. Penjualan akan otomatis masuk ke sesi ini.` : "Tidak ada sesi yang sedang berlangsung untuk tanggal ini.", !active);
+    } catch (error) {
+        stockSessionList.innerHTML = `<div class="stock-empty stock-error">${escapeHTML(error.message)}</div>`;
+        stockSetMessage("stockSessionMessage", "Jadwal sesi gagal dimuat. Pastikan migration Tahap 5 sudah dijalankan.", true);
+    }
+}
 
 function renderStockTransactionData(data) {
     stockTransactionProducts = data.products || [];
@@ -1708,7 +1739,7 @@ function renderStockTransactionData(data) {
             <article class="stock-transaction-row">
                 <div class="stock-transaction-row-main">
                     <strong>${escapeHTML(item.product_name)}</strong>
-                    <small>${escapeHTML(item.transaction_code)} · ${new Date(item.created_at).toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" })}</small>
+                    <small>${escapeHTML(item.transaction_code)} · Sesi ${item.session_number || "—"} · ${new Date(item.created_at).toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" })}</small>
                     ${item.notes ? `<small>${escapeHTML(item.notes)}</small>` : ""}
                 </div>
                 <div class="stock-transaction-amount">−${formatStockNumber(item.quantity)} <small>${escapeHTML(item.unit || "")}</small></div>
@@ -1731,6 +1762,7 @@ async function loadStockTransactions() {
     try {
         const data = await stockApi(`/api/stock/transactions?date=${encodeURIComponent(businessDate)}`);
         renderStockTransactionData(data);
+        await loadStockSessions();
     } catch (error) {
         stockAvailabilityList.innerHTML = `<div class="stock-empty stock-error">${escapeHTML(error.message)}</div>`;
         stockTransactionHistory.innerHTML = '<div class="stock-empty">Riwayat tidak dapat dimuat.</div>';
@@ -1760,11 +1792,13 @@ stockTransactionForm?.addEventListener("submit", async event => {
                 business_date: businessDate,
                 product_id: productId,
                 quantity,
+                sale_time: stockTransactionTime.value,
                 notes: stockTransactionNotes.value.trim()
             })
         });
         stockTransactionForm.reset();
         stockTransactionDate.value = businessDate;
+        if (stockTransactionTime) stockTransactionTime.value = currentJakartaTime();
         stockSetMessage("stockTransactionMessage", result.message || "Penjualan berhasil dicatat.");
         await loadStockTransactions();
     } catch (error) {
@@ -1776,4 +1810,5 @@ stockTransactionForm?.addEventListener("submit", async event => {
 
 if (stockTransactionDate) {
     stockTransactionDate.value = getJakartaBusinessDate();
+    if (stockTransactionTime) stockTransactionTime.value = currentJakartaTime();
 }

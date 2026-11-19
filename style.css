@@ -1758,3 +1758,46 @@ header { flex-shrink: 0; }
     .stock-availability-row,
     .stock-transaction-row { padding: 10px; }
 }
+
+/* Stock session management - Stage 5 */
+.stock-session-panel { margin-bottom: 16px; }
+.stock-session-daytype {
+    display: inline-flex;
+    align-items: center;
+    padding: 7px 10px;
+    border: 1px solid #7656d64a;
+    border-radius: 999px;
+    background: #7656d614;
+    color: #c8b8ff;
+    font-size: 10px;
+    white-space: nowrap;
+}
+.stock-session-list {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 10px;
+    margin-top: 15px;
+}
+.stock-session-card {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 10px;
+    min-width: 0;
+    padding: 13px;
+    border: 1px solid #ffffff16;
+    border-radius: 10px;
+    background: #090910;
+}
+.stock-session-card > div { display: grid; gap: 5px; }
+.stock-session-card strong { color: #eee; font-size: 12px; }
+.stock-session-card small { color: #888; font-size: 10px; }
+.stock-session-card > span { font-size: 10px; text-align: right; }
+.stock-session-card.is-open { border-color: #37b77b66; background: #12332238; }
+.stock-session-card.is-open > span { color: #65dba0; }
+.stock-session-card.is-closed > span { color: #aaa; }
+.stock-session-card.is-scheduled > span { color: #b6a2ff; }
+@media(max-width:700px) {
+    .stock-session-list { grid-template-columns: 1fr; }
+    .stock-session-card { padding: 11px; }
+}

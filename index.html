@@ -170,6 +170,20 @@
         <p id="stockInventoryMessage" class="stock-message" aria-live="polite"></p>
     </div>
 
+    <div class="stock-panel stock-session-panel">
+        <div class="stock-panel-heading">
+            <div>
+                <h3>Manajemen Sesi</h3>
+                <p>Sesi mengikuti jadwal weekday dan weekend secara otomatis. Sesi yang telah berakhir akan terkunci.</p>
+            </div>
+            <span id="stockSessionDayType" class="stock-session-daytype">Memuat jadwal...</span>
+        </div>
+        <div id="stockSessionList" class="stock-session-list">
+            <div class="stock-empty">Memuat jadwal sesi...</div>
+        </div>
+        <p id="stockSessionMessage" class="stock-message" aria-live="polite"></p>
+    </div>
+
     <div class="stock-panel stock-transaction-panel">
         <div class="stock-panel-heading">
             <div>
@@ -189,6 +203,9 @@
             </label>
             <label>Jumlah terjual
                 <input id="stockTransactionQuantity" type="number" min="0.01" step="0.01" inputmode="decimal" required placeholder="Contoh: 2">
+            </label>
+            <label>Waktu pada nota
+                <input id="stockTransactionTime" type="time" required>
             </label>
             <label>Catatan (opsional)
                 <input id="stockTransactionNotes" type="text" maxlength="500" placeholder="Contoh: penjualan langsung">
