@@ -10,6 +10,20 @@ function isValidDate(value) {
 function validId(value) {
   return /^\d+$/.test(String(value ?? ""));
 }
+function jakartaNow() {
+  const parts = new Intl.DateTimeFormat("en-CA", {
+    timeZone: "Asia/Jakarta", year: "numeric", month: "2-digit", day: "2-digit",
+    hour: "2-digit", minute: "2-digit", hourCycle: "h23"
+  }).formatToParts(new Date());
+  const v = Object.fromEntries(parts.map(p => [p.type, p.value]));
+  return { date: `${v.year}-${v.month}-${v.day}`, time: `${v.hour}:${v.minute}` };
+}
+function sessionPlan(date) {
+  const day = new Date(`${date}T00:00:00Z`).getUTCDay();
+  return day === 0 || day === 6
+    ? [{ number: 1, start: "10:00", end: "12:00" }, { number: 2, start: "12:00", end: "15:00" }, { number: 3, start: "15:00", end: "17:00" }]
+    : [{ number: 1, start: "12:00", end: "15:00" }, { number: 2, start: "15:00", end: "17:00" }];
+}
 
 export default async function handler(req, res) {
   if (!process.env.DATABASE_URL) {
@@ -44,9 +58,11 @@ export default async function handler(req, res) {
         sql`
           SELECT t.id, t.transaction_code, t.business_date, t.product_id,
             p.name AS product_name, p.unit, t.transaction_type, t.quantity,
-            t.stock_effect, t.status, t.notes, t.created_at
+            t.stock_effect, t.status, t.notes, t.created_at,
+            ss.session_number, ss.start_time AS session_start, ss.end_time AS session_end
           FROM stock_transactions t
           JOIN stock_products p ON p.id = t.product_id
+          LEFT JOIN stock_sessions ss ON ss.id = t.session_id
           WHERE t.business_date = ${businessDate}::date
           ORDER BY t.created_at DESC, t.id DESC
           LIMIT 100
@@ -63,7 +79,7 @@ export default async function handler(req, res) {
     }
 
     if (req.method === "POST") {
-      const { business_date: businessDate, product_id: productId, quantity: rawQuantity, notes = "" } = req.body || {};
+      const { business_date: businessDate, product_id: productId, quantity: rawQuantity, notes = "", sale_time: saleTime } = req.body || {};
       const quantity = Number(rawQuantity);
       const cleanNotes = typeof notes === "string" ? notes.trim().slice(0, 500) : "";
 
@@ -76,6 +92,34 @@ export default async function handler(req, res) {
       if (rawQuantity === "" || rawQuantity === null || !Number.isFinite(quantity) || quantity <= 0) {
         return res.status(400).json({ success: false, message: "Jumlah penjualan harus lebih dari 0" });
       }
+      if (typeof saleTime !== "string" || !/^([01]\d|2[0-3]):[0-5]\d$/.test(saleTime)) {
+        return res.status(400).json({ success: false, message: "Waktu penjualan wajib diisi dengan format HH:MM" });
+      }
+
+      const now = jakartaNow();
+      if (businessDate !== now.date) {
+        return res.status(409).json({ success: false, message: "Pencatatan sesi hanya dibuka untuk tanggal operasional hari ini." });
+      }
+      const plan = sessionPlan(businessDate);
+      const currentSession = plan.find(s => now.time >= s.start && now.time < s.end);
+      const selectedSession = plan.find(s => saleTime >= s.start && saleTime < s.end);
+      if (!currentSession) {
+        return res.status(409).json({ success: false, message: "Tidak ada sesi yang sedang berlangsung. Penjualan sesi yang sudah berakhir telah dikunci." });
+      }
+      if (!selectedSession || selectedSession.number !== currentSession.number) {
+        return res.status(409).json({ success: false, message: `Waktu nota harus berada dalam sesi aktif (${currentSession.start}–${currentSession.end}).` });
+      }
+
+      await sql`
+        INSERT INTO stock_sessions (business_date, session_number, start_time, end_time, status, opened_at)
+        VALUES (${businessDate}::date, ${currentSession.number}, ${currentSession.start}::time, ${currentSession.end}::time, 'open', NOW())
+        ON CONFLICT (business_date, session_number) DO UPDATE SET status = 'open', opened_at = COALESCE(stock_sessions.opened_at, NOW()), updated_at = NOW()
+      `;
+      const sessionRows = await sql`
+        SELECT id FROM stock_sessions WHERE business_date = ${businessDate}::date AND session_number = ${currentSession.number}
+      `;
+      const sessionId = sessionRows[0]?.id;
+      if (!sessionId) return res.status(500).json({ success: false, message: "Sesi aktif tidak dapat disiapkan." });
 
       const product = await sql`
         SELECT id, name FROM stock_products WHERE id = ${productId} AND is_active = TRUE
@@ -99,10 +143,10 @@ export default async function handler(req, res) {
         ), saved AS (
           INSERT INTO stock_transactions (
             transaction_code, business_date, product_id, transaction_type,
-            quantity, stock_effect, status, idempotency_key, notes
+            quantity, stock_effect, status, idempotency_key, notes, session_id
           )
           SELECT ${transactionCode}, ${businessDate}::date, ${productId},
-            'manual_sale', ${quantity}, -1, 'posted', ${idempotencyKey}, ${cleanNotes}
+            'manual_sale', ${quantity}, -1, 'posted', ${idempotencyKey}, ${cleanNotes}, ${sessionId}
           FROM current_balance
           WHERE available_stock >= ${quantity}
           RETURNING id, transaction_code, business_date, product_id,
@@ -122,7 +166,7 @@ export default async function handler(req, res) {
         return res.status(409).json({ success: false, message: "Stok tidak mencukupi untuk jumlah penjualan tersebut." });
       }
 
-      return res.status(201).json({ success: true, message: `Penjualan ${product[0].name} berhasil dicatat.`, transaction: inserted[0] });
+      return res.status(201).json({ success: true, message: `Penjualan ${product[0].name} berhasil dicatat ke Sesi ${currentSession.number}.`, transaction: inserted[0] });
     }
 
     res.setHeader("Allow", "GET, POST");
